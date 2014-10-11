@@ -5,7 +5,9 @@
 		<meta charset="utf-8" />
 		
 		<!-- Front-loading javascript libraries -->
+		<!--
 		<script src="jquery.js"></script>
+		-->
 		<script src="en_Core.js"></script>
 
 		<title>
@@ -14,21 +16,5 @@
 	</head>
 	
 	<body>
-
-		<!-- Page constructor -->
-		<script>
-	
-			_initialize = function()
-			{
-				en_Core.AddDebugMessage("Switching to Silent debug mode.");
-				en_Core.SetDebugMode(en_Core.DEBUG_MODE_SILENT);
-				en_Core.AddDebugMessage("I shouldn't see this now debug mode is set to Silent");
-				alert("Up and running");
-			}
-
-			// Ghokay, run da maddafakka.
-			$(document).ready(_initialize)
-
-		</script>
 	</body>
 </html>
