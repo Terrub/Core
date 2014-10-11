@@ -1,13 +1,3 @@
-var en_Core;
-
-/*if ("undefined" === typeof jQuery)
-{
-	//#QUESTION: Why fail here? We can register the fault, halt initiation of depending logic and delegate the error to when the error handler is operational!
-	_throwError("JQUERY NOT FOUND!");
-}*/
-
-//alert(document.URL);
-//alert(document.baseURI);
 
 /*
 	NOTEPAD:
@@ -45,6 +35,17 @@ var en_Core;
 		n Can we randomly navigate the user to some dodgy site with just a bit too much skin for office policy?
 */
 
+var en_Core;
+
+/*if ("undefined" === typeof jQuery)
+{
+	//#QUESTION: Why fail here? We can register the fault, halt initiation of depending logic and delegate the error to when the error handler is operational!
+	_throwError("JQUERY NOT FOUND!");
+}*/
+
+//alert(document.URL);
+//alert(document.baseURI);
+
 (function()
 {
 	// Now we're starting to define the object itself.
@@ -54,14 +55,15 @@ var en_Core;
 
 	var _DIV = "div";
 
+	var _WORKING_AS_INTENDED = "ERHMERGHERD IT WORKS";
+	var _GENERIC_ERROR = '(\\/)\n(x_x)\n(")(")\nDED BUNEH';
+
 	/****************************************************************
 	 * Array stuff
 	 ****************************************************************/
-
+/* Not using this anymore atm.
 	var _ARRAY_LENGTH_EMPTY = [].length;
 	var __i = _ARRAY_LENGTH_EMPTY;
-	var _WORKING_AS_INTENDED = "ERHMERGHERD IT WORKS";
-	var _GENERIC_ERROR = '(\\/)\n(x_x)\n(")(")\nDED BUNEH';
 
 	//#IMPLICATION: Used in en_Core.js due to constant "_ARRAY_LENGTH_EMPTY";
 	//#IMPLICATION: Used in JavaScript due to array method: "indexOf()";
@@ -84,7 +86,55 @@ var en_Core;
 		
 		return !( (__i < _ARRAY_LENGTH_EMPTY) || (__i >= arr.length) )
 	};
+*/
 
+
+	/****************************************************************
+	 * Version control stuff
+	 ****************************************************************/
+	// We need this for our initiation...
+	var _addEventListener;
+	var _document_ready_event;
+	var _removeEventListener;
+
+	if (document.addEventListener)
+	{
+		_addEventListener = document.addEventListener;
+		_removeEventListener = document.removeEventListener
+		_document_ready_event = "DOMContentLoaded";
+	}
+	else if (document.attachEvent)
+	{
+		_addEventListener = document.attachEvent;
+		_removeEventListener = document.detachEvent;
+		_document_ready_event = "onreadystatechange";
+	}
+	else
+	{
+		// We alert intead of throwing an error, as our error throwing arm might not be fully grown yet at this point.
+		alert("Cannot determine document ready state.");
+	}
+
+	// Test to see we have f.caller:
+	var _functionCaller;
+
+	(function _functionCallerChecker()
+		{
+			var _GLOBAL_SCOPE = "Global Scope"
+			if (_functionCallerChecker.caller)
+			{
+				_functionCaller = function(self)
+				{
+					return self.caller || _GLOBAL_SCOPE;
+				}
+			}
+			else 
+			{
+				// What version are we at?
+				alert("_functionCaller is 'undefined'");
+			}
+		}
+	)();
 
 	/****************************************************************
 	 * Error stuff
@@ -102,19 +152,29 @@ var en_Core;
 
 	var _error_pane;
 
-	var _throwError = function(message)
+	// Using a function declaration instead of expression to be able to pass along itself. See [>1]
+	function _throwError(message)
 	{
 		// Delegate any messages to the error pane?
 		
+		var error_message = message || _GENERIC_ERROR;
+
+		// Do we have a way to check who threw that?
+		if (_functionCaller)
+		{
+			// [>1]: We can pass along "_throwError" because it's declared and not passed to an expression (i.e.: "var _throwError = function(){};")
+			error_message = _functionCaller(_throwError) + " says:\n" + error_message;
+		}
+
 		// Well we need an error pane first.
 		if (!_error_pane)
 		{
-			alert(_GENERIC_ERROR);
+			alert(error_message);
 			return;
 		}
 
 		// Bit messy, but works for now I guess?
-		_error_pane.innerHTML = message;
+		_error_pane.innerHTML = error_message;
 
 		// Now we need styling and error delegation.
 		// I want to be able to flood our error log before we can display it, because source and display
@@ -134,17 +194,73 @@ var en_Core;
 	 * Debugger stuff
 	 ****************************************************************/
 
-	en_Core.DEBUG_MODE_VERBOSE = "spamming console with debug data";
-	en_Core.DEBUG_MODE_NONE = "Not debugging or spamming at the moment";
-	en_Core.DEBUG_MODE_SILENT = "Registering debug messages but not spamming console";
+	_debug_modes = [];
 
-	en_Core.DEBUG_MODES = [
-		en_Core.DEBUG_MODE_VERBOSE,
-		en_Core.DEBUG_MODE_NONE,
-		en_Core.DEBUG_MODE_SILENT
-	];
+	var _addDebugMode = function(name, description, add_debug_message_handler)
+	{
+		// Type checking
+		if (!name)
+		{
+			_throwError("_addDebugMode requires parameter #1: 'name' <string>");
+		}
 
-	en_Core.AddDebugMessage = _DEFAULT_FUNCTION;
+		if (!description)
+		{
+			_throwError("_addDebugMode requires parameter #2: 'description' <string>");
+		}
+
+		// Optional parameter defaults
+		if (typeof add_debug_message_handler != _TYPE_FUNCTION)
+		{
+			add_debug_message_handler = _DEFAULT_FUNCTION;
+		}
+
+		// This is perhaps a bit risky?
+		name = "DEBUG_MODE_" + name.toUpperCase();
+
+		// Could turn this into a factory function?
+		var mode = {
+			name: name,
+			description: description,
+			AddDebugMessage: add_debug_message_handler || _DEFAULT_FUNCTION
+		};
+
+		// Right the new mode is ready. Add it to the list.
+		
+		// Find a suitable spot for it.
+		var n = _debug_modes.length;
+
+		// Inject
+		_debug_modes[n] = mode;
+
+		// And make sure the outside world can see it.
+		en_Core[name] = n;
+
+		return mode;
+	}
+
+	var _populateDebugModes = function()
+	{
+		// Reset for now
+		_debug_modes = [];
+
+
+	}
+
+/*	en_Core.DEBUG_MODE_VERBOSE = {
+		description: "spamming console with debug data",
+		AddDebugMessage: _captureAndPrintMessage
+	};
+	en_Core.DEBUG_MODE_NONE = {
+		description: "Not debugging or spamming at the moment",
+		AddDebugMessage: _DEFAULT_FUNCTION
+	}
+	en_Core.DEBUG_MODE_SILENT = {
+		description: "Registering debug messages but not spamming console",
+		AddDebugMessage: _captureMessage
+	};*/
+
+	
 
 	/* 
 		#TODO: This should not just be a var declaration. This should be a property declaration.
@@ -198,19 +314,13 @@ var en_Core;
 		_printMessage.apply(null, arguments);
 	};
 
-	en_Core.SetDebugMode = function(mode)
+	en_Core.AddDebugMessage = function()
 	{
-		if (!_keyInArray(mode, en_Core.DEBUG_MODES))
-		{
-			en_Core.AddDebugMessage("Attempt to set debug mode with unrecognised mode:", mode);
+		// I don't like this thing having to check everytime somebody calls it.
+		// We know when we switch debug mode. so just realign the pointer at
+		// that point in time. It's like using a clock to check for a value change :(
 
-			return;
-		}
-
-		//#TODO: Make this a property change.
-		_debug_mode = mode;
-
-		// This needs to be moved out of this function. It's not part of it's responsibility
+		/* 
 		if (_debug_mode === en_Core.DEBUG_MODE_VERBOSE)
 		{
 			// Realign pointer to capture and print functionality
@@ -225,6 +335,30 @@ var en_Core;
 		{
 			en_Core.AddDebugMessage = _DEFAULT_FUNCTION;
 		}
+		*/
+
+		// HA! fixed:
+		_debug_mode.AddDebugMessage.call(null, arguments);
+	}
+
+	en_Core.SetDebugMode = function(mode)
+	{
+		var debug_mode = _debug_modes[mode];
+
+		if (!debug_mode)
+		{
+			_throwError("Attempt to set debug mode with unrecognised mode: '" + mode + "'. Keeping current mode.");
+
+			return;
+		}
+
+		//#TODO: Make this a property change.
+
+		// Wait... this isn't that hard. Switch mode object here.
+		// The mode object contains it's specific debug message handle thingy.
+		// That way we can never do it wrong and the outside cannot get a hold
+		// of our internal function nor a reference pointing towards it! HA!
+		_debug_mode = _debug_modes[mode];
 	};
 
 	en_Core.GetDebugMode = function()
@@ -255,6 +389,8 @@ var en_Core;
 			_createErrorPane();
 		}
 
+		en_Core.RunTests();
+
 	 	alert(_WORKING_AS_INTENDED);
 	}
 
@@ -268,28 +404,6 @@ var en_Core;
 	// If we have an _initialize function declared, we should probably make sure we can run it.
 	if (_initialize)
 	{
-		var _addEventListener;
-		var _document_ready_event;
-		var _removeEventListener;
-
-		if (document.addEventListener)
-		{
-			_addEventListener = document.addEventListener;
-			_removeEventListener = document.removeEventListener
-			_document_ready_event = "DOMContentLoaded";
-		}
-		else if (document.attachEvent)
-		{
-			_addEventListener = document.attachEvent;
-			_removeEventListener = document.detachEvent;
-			_document_ready_event = "onreadystatechange";
-		}
-		else
-		{
-			// We alert intead of throwing an error, as our error throwing arm might not be fully grown yet at this point.
-			alert("Cannot determine document ready state.");
-		}
-
 		_addEventListener.call(document, _document_ready_event, function()
 		{
 			_removeEventListener.call(document, _document_ready_event);
@@ -383,7 +497,8 @@ var en_Core;
 
 
 
-// OK You can't inject an iterator function into the console log. He'll cut the cord after the first return if you use f() or the function itself.
+// OK You can't inject an iterator function into the console log. He'll cut the cord after the first return if you use "f()"
+// or it just returns the function itself if you use "f". I'm attempting to apply Lua logic it seems.
 /*
 	console.log("a", "b", "c");
 
@@ -410,4 +525,36 @@ var en_Core;
 /*
 	var arr = []; arr.push("a", "b", 1); var obj = {c:2,d:3}; arr.push(obj);arr.join(" ")
 	which returns: "a b 1 [object Object]"
+*/
+
+// Why does this not work?!... Wait now it does!
+/*
+var _functionCaller;
+(function _functionCallerChecker()
+{
+	var _GLOBAL_SCOPE = "Global Scope";
+
+	if (_functionCallerChecker.caller)
+	{
+		_functionCaller = function(self)
+		{
+			if (!self) {console.log("undefined self")}
+			console.log("self = ", self);
+			return self.caller || _GLOBAL_SCOPE;
+		}
+	}
+	else {alert("_functionCaller is 'undefined'.");}
+})();
+var str="";
+function x()
+{
+	console.log("_functionCaller: ", _functionCaller);
+	str=_functionCaller(x);
+};
+function y()
+{
+	x()
+};
+y();
+console.log("The actual function: ",str);
 */
