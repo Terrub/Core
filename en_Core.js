@@ -20,7 +20,7 @@
 		We need to know when now is now and when then was then. To give a sense of direction we need a starting point.
 		Initiation is probably the best way to describe this. Do this last.
 
-	Actually, the above is a bit dry and floaty for most people...
+	Actually, the above is perhaps a bit dry and floaty for most people...
 	What we do need to keep track of is each individidiual layer of certainty.
 	Once we've established specific certainties, or able to make certain assumptions, we can make a statement and
 	then move on to make larger and larger assumptions.
@@ -51,12 +51,16 @@ var en_Core;
 	// Now we're starting to define the object itself.
 	en_Core = {};
 
-	var _DEFAULT_FUNCTION = function(){};
+	function _DEFAULT_FUNCTION(){};
+
+	var _TYPE_FUNCTION = "function";
 
 	var _DIV = "div";
 
 	var _WORKING_AS_INTENDED = "ERHMERGHERD IT WORKS";
 	var _GENERIC_ERROR = '(\\/)\n(x_x)\n(")(")\nDED BUNEH';
+
+	var _DEBUG_MODE_PREFIX = "DEBUG_MODE_";
 
 	/****************************************************************
 	 * Array stuff
@@ -130,7 +134,7 @@ var en_Core;
 			}
 			else 
 			{
-				// What version are we at?
+				// 
 				alert("_functionCaller is 'undefined'");
 			}
 		}
@@ -174,7 +178,7 @@ var en_Core;
 		}
 
 		// Bit messy, but works for now I guess?
-		_error_pane.innerHTML = error_message;
+		_error_pane.innerHTML += "<p>" + error_message +"</p>";
 
 		// Now we need styling and error delegation.
 		// I want to be able to flood our error log before we can display it, because source and display
@@ -194,9 +198,17 @@ var en_Core;
 	 * Debugger stuff
 	 ****************************************************************/
 
-	_debug_modes = [];
+	/* 
+		#TODO: This should not just be a var declaration. This should be a property declaration.
+		That means we need to define what a property is, and what it does. Because I want to make
+		a property announce that it is changed by default. i.e. unless specified to stfu it should
+		raise an event of sorts so others can tie into it.
+	*/
+	var _debug_mode;
 
-	var _addDebugMode = function(name, description, add_debug_message_handler)
+	var _debug_modes = [];
+
+	function _addDebugMode(name, description, add_debug_message_handler)
 	{
 		// Type checking
 		if (!name)
@@ -215,72 +227,69 @@ var en_Core;
 			add_debug_message_handler = _DEFAULT_FUNCTION;
 		}
 
-		// This is perhaps a bit risky?
-		name = "DEBUG_MODE_" + name.toUpperCase();
+		//#QUESTION: 	So... I wanted to put depency checks here, but that would turn into a big mess
+		//			 	pretty quickly. Because if I tested for the array _debug_modes here I'd technically
+		//				also have to check if Array.isArray() exists which we've already established
+		//				elsewhere, but this function doesn't know that, so how do we make sure that this
+		//				program, housing these functions knows that?
+		//
+		//				The alternative is to not test for it, but to just force it if it doesn't allow us
+		//				to inject a new value, but that causes a whole slew of other possible problems later.
+		//				Think things like naming issues or property statechange detection later down the line.
+
+		// Turned prefix into an internal constant so we can test for it.
+		name = _doPrefixDebugMode(name);
 
 		// Could turn this into a factory function?
 		var mode = {
 			name: name,
 			description: description,
-			AddDebugMessage: add_debug_message_handler || _DEFAULT_FUNCTION
+			AddDebugMessage: add_debug_message_handler
 		};
 
-		// Right the new mode is ready. Add it to the list.
+		// Right the new mode is ready. Add it to the list. -- Also, my urge to indent the next few lines makes me
+		// wonder whether or not I should stick that in a seperate function or not.
 		
-		// Find a suitable spot for it.
-		var n = _debug_modes.length;
+			// Find a suitable spot for it.
+			var n = _debug_modes.length;
 
-		// Inject
-		_debug_modes[n] = mode;
+			// Inject
+			_debug_modes[n] = mode;
 
-		// And make sure the outside world can see it.
-		en_Core[name] = n;
+			// And make sure the outside world can see it.
+			en_Core[name] = n;
 
 		return mode;
 	}
 
-	var _populateDebugModes = function()
+	function _doPrefixDebugMode(mode_name)
+	{
+		return _DEBUG_MODE_PREFIX + mode_name.toUpperCase();
+	}
+
+	function _populateDebugModes()
 	{
 		// Reset for now
 		_debug_modes = [];
 
-
+		_addDebugMode("none", "Not debugging or spamming at the moment");
+		_addDebugMode("verbose", "spamming console with debug data", _captureAndPrintMessage);
+		_addDebugMode("silent", "Registering debug messages but not spamming console", _captureMessage);
 	}
 
-/*	en_Core.DEBUG_MODE_VERBOSE = {
-		description: "spamming console with debug data",
-		AddDebugMessage: _captureAndPrintMessage
-	};
-	en_Core.DEBUG_MODE_NONE = {
-		description: "Not debugging or spamming at the moment",
-		AddDebugMessage: _DEFAULT_FUNCTION
-	}
-	en_Core.DEBUG_MODE_SILENT = {
-		description: "Registering debug messages but not spamming console",
-		AddDebugMessage: _captureMessage
-	};*/
-
-	
-
-	/* 
-		#TODO: This should not just be a var declaration. This should be a property declaration.
-		That means we need to define what a property is, and what it does. Because I want to make
-		a property announce that it is changed by default. i.e. unless specified to stfu it should
-		raise an event of sorts so others can tie into it.
-	*/
-	var _debug_mode;
+	_populateDebugModes();
 
 	var _captured_messages = [];
 
 	//#IMPLICATION: Used in JavaScript due to global variable: "console"
 	//#IMPLICATION: Used in JavaScript due to console method: "log()"
-	var _printMessage = function()
+	function _printMessage()
 	{
 		console.log("en_Core: ", arguments);
 	};
 
 	//#IMPLICATION: Used in JavaScript due to use of locally implied variable: "arguments"
-	var _new_captureMessage = function(args)
+	function _new_captureMessage(args)
 	{
 		// Create a new message.
 		var cap_msg = {
@@ -294,7 +303,7 @@ var en_Core;
 	};
 
 	//#IMPLICATION: Used in JavaScript due to use of locally implied variable: "arguments"
-	var _captureMessage = function()
+	function _captureMessage()
 	{
 		/*
 			I don't just want to stick in the arguments so we'll have to create something of a standard object in which we stick some data.
@@ -307,7 +316,7 @@ var en_Core;
 	};
 
 	//#IMPLICATION: Used in JavaScript due to use of locally implied variable: "arguments", twice!
-	var _captureAndPrintMessage = function()
+	function _captureAndPrintMessage()
 	{
 		_captureMessage.apply(null, arguments);
 
@@ -316,28 +325,11 @@ var en_Core;
 
 	en_Core.AddDebugMessage = function()
 	{
-		// I don't like this thing having to check everytime somebody calls it.
-		// We know when we switch debug mode. so just realign the pointer at
-		// that point in time. It's like using a clock to check for a value change :(
+		if (!_debug_mode)
+		{
+			_throwError("DaFuq?!");
+		}
 
-		/* 
-		if (_debug_mode === en_Core.DEBUG_MODE_VERBOSE)
-		{
-			// Realign pointer to capture and print functionality
-			en_Core.AddDebugMessage = _captureAndPrintMessage;
-		}
-		else if (_debug_mode === en_Core.DEBUG_MODE_SILENT)
-		{
-			// Realign pointer to our message capture functionality
-			en_Core.AddDebugMessage = _captureMessage;
-		}
-		else
-		{
-			en_Core.AddDebugMessage = _DEFAULT_FUNCTION;
-		}
-		*/
-
-		// HA! fixed:
 		_debug_mode.AddDebugMessage.call(null, arguments);
 	}
 
@@ -358,7 +350,7 @@ var en_Core;
 		// The mode object contains it's specific debug message handle thingy.
 		// That way we can never do it wrong and the outside cannot get a hold
 		// of our internal function nor a reference pointing towards it! HA!
-		_debug_mode = _debug_modes[mode];
+		_debug_mode = debug_mode;
 	};
 
 	en_Core.GetDebugMode = function()
@@ -380,14 +372,14 @@ var en_Core;
 
 	var _initialize = function()
 	{
-	 	en_Core.AddDebugMessage("Switching to Silent debug mode.");
-		en_Core.SetDebugMode(en_Core.DEBUG_MODE_SILENT);
-		en_Core.AddDebugMessage("I shouldn't see this now debug mode is set to Silent");
-
 		if (!_error_pane)
 		{
 			_createErrorPane();
 		}
+
+	 	en_Core.AddDebugMessage("Switching to Silent debug mode.");
+		en_Core.SetDebugMode(en_Core.DEBUG_MODE_SILENT);
+		en_Core.AddDebugMessage("I shouldn't see this now debug mode is set to Silent");
 
 		en_Core.RunTests();
 
@@ -398,8 +390,6 @@ var en_Core;
 	/****************************************************************
 	 * Event listener stuff for initiation.
 	 ****************************************************************/
-
-	 // ERHMERGHERD THIS IS SO FAKKIN DERTEH!!! This requires massive refactorisationalisation!!!
 
 	// If we have an _initialize function declared, we should probably make sure we can run it.
 	if (_initialize)
@@ -412,31 +402,103 @@ var en_Core;
 		});
 	}
 
+	// All tests for this document.
+	//
+	// CAUTION: They should all be declared underneath en_Core.RunTests using declarative function notation:
+	//	i.e.: function nameOfTest_test(){};
+	//	NOT: var nameOfTest_test = function(){};
 	en_Core.RunTests = function()
 	{
 		//#QUESTION: 	How do we know we have full test coverage? Should we register each function in en_Core (The API so
 		// 				to speak) and check for each function whether it has a test?
+	
+		_addDebugMode_test();
 
+		GetDebugMode_test();
+		GetCapturedDebugMessages_test();
+		SetDebugMode_test();
+	}
 
-		/****************************************************************
-		 * en_Core.DebugMode()
-		 ****************************************************************/
+	/****************************************************************
+	 * _addDebugMode()
+	 ****************************************************************/
+	function _addDebugMode_test()
+	{
+		// Things we need:
+		var debug_mode_name = "debug_mode_create_test_name";
+		var debug_mode_description = "debug_mode_create_test_description";
+		var debug_mode_message_function_works = false;
+		var debugModeMessageFunction = function()
+		{
+			debug_mode_message_function_works = true;
+		};
+
+		var temp = _debug_modes;
+
+		_debug_modes = [];
+
+		var mode_to_check = _addDebugMode(debug_mode_name, debug_mode_description, debugModeMessageFunction);
+
+		var prefixed_name = _doPrefixDebugMode(debug_mode_name);
+		if (en_Core[prefixed_name] !== 0)
+		{
+			_throwError("expected 'en_Core." + prefixed_name + " to contain value: " + 0 + ". Received: " + en_Core[prefixed_name]);
+		}
+
+		if (mode_to_check.name != prefixed_name)
+		{
+			_throwError("expected en_Core." + prefixed_name + ".name to contain value: " + prefixed_name + ". Received: " + mode_to_check.name);
+		}
+
+		if (mode_to_check.description != debug_mode_description)
+		{
+			_throwError("expected en_Core." + prefixed_name + ".description to contain value: " + debug_mode_description + ". Received: " + mode_to_check.description);
+		}
+
+		if (mode_to_check.AddDebugMessage != debugModeMessageFunction)
+		{
+			_throwError("expected en_Core." + prefixed_name + ".AddDebugMessage to contain value: " + debugModeMessageFunction + ". Received: " + mode_to_check.AddDebugMessage);
+		}
+
+		mode_to_check.AddDebugMessage();
+		if (!debug_mode_message_function_works)
+		{
+			_throwError("en_Core." + prefixed_name + ".AddDebugMessage() did not execute properly.");
+		}
+
+		// Time to clean up:
+		delete en_Core[prefixed_name];
+
+		delete mode_to_check;
+
+		_debug_modes = temp;
+
+	}
+	
+	/****************************************************************
+	 * en_Core.GetDebugMode()
+	 ****************************************************************/
+	function GetDebugMode_test()
+	{
+		// Store current variables
 		var temp = _debug_mode;
 		
 		_debug_mode = "TEST";
 
-		//
-		if (en_Core.GetDebugMode() != "TEST")
+		var _retrieved_debug_mode = en_Core.GetDebugMode()
+		if (_retrieved_debug_mode != "TEST")
 		{
-			_throwError("en_Core.GetDebugMode did not return it's expected result");
+			_throwError("expected en_Core.GetDebugMode to return value: " + _debug_mode + ". Received: " + _retrieved_debug_mode);
 		}
 
 		_debug_mode = temp;
+	}
 
-
-		/****************************************************************
-		 * en_Core.GetCapturedDebugMessages()
-		 ****************************************************************/
+	/****************************************************************
+	 * en_Core.GetCapturedDebugMessages()
+	 ****************************************************************/
+	function GetCapturedDebugMessages_test()
+	{
 		temp = _captured_messages;
 
 		_captured_messages = [];
@@ -448,12 +510,14 @@ var en_Core;
 		}
 
 		_captured_messages = temp;
+	}
 
-
-		/****************************************************************
-		 * en_Core.SetDebugMode()
-		 ****************************************************************/
-		temp = _debug_mode;
+	/****************************************************************
+	 * en_Core.SetDebugMode()
+	 ****************************************************************/
+	 function SetDebugMode_test()
+	 {
+	 	temp = _debug_mode;
 
 		// Empty sets should not be accepted:
 		en_Core.SetDebugMode();
@@ -474,31 +538,21 @@ var en_Core;
 		}
 
 		// Make sure it actually still works.
-		var mode = en_Core.DEBUG_MODES[0];
-		en_Core.SetDebugMode(mode);
+		var mode = _debug_modes[0];
+		en_Core.SetDebugMode(0);
 
 		if (_debug_mode != mode)
 		{
-			_throwError("en_Core.SetDebugMode() does not execute on expected values");
+			_throwError("en_Core.SetDebugMode() expected value: '" + JSON.stringify(mode) + "' but received: '" + JSON.stringify(_debug_mode));
 		}
 
 		_debug_mode = temp;
-
-	}
-
-	// I can't just do this, because now I create a snapshot of the current __core and paste that over to en_Core.
-	// Any changes made to __core afterwards would not be detected in en_Core -_-.
-	// I have to work with the en_Core object directly.
-	/*
-	en_Core = __core; 
-	*/
+	 }
 
 })();
 
-
-
 // OK You can't inject an iterator function into the console log. He'll cut the cord after the first return if you use "f()"
-// or it just returns the function itself if you use "f". I'm attempting to apply Lua logic it seems.
+// or it just returns the function itself if you use "f".
 /*
 	console.log("a", "b", "c");
 
@@ -509,16 +563,21 @@ var en_Core;
 		var i = -1;
 		var n = params.length;
 
-		return function() {
+		return function _f() {
 			i++; 
 			if (i < n)
 			{
-				return params[i];
+				return params[i], _f();
 			}
 		}
 	}
 	var f = _unpack(arr);
 	console.log(f());
+*/
+
+// I was attempting to apply Lua logic it seems because the following returns "undefined 2" instead of the expected "1 2";
+/* 
+	var a,b = (function(){return 1,2;})(); console.log(a,b);
 */
 
 // Another problem. We can't just use Array.join(" ") because:
