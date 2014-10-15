@@ -54,6 +54,8 @@ var en_Core;
 	function _DEFAULT_FUNCTION(){};
 
 	var _TYPE_FUNCTION = "function";
+	var _TYPE_STRING = "string";
+	var _TYPE_DEBUG_MODE = "debug mode";
 
 	var _DIV = "div";
 
@@ -122,7 +124,7 @@ var en_Core;
 	// Test to see we have f.caller:
 	var _functionCaller;
 
-	(function _functionCallerChecker()
+/*	(function _functionCallerChecker()
 		{
 			var _GLOBAL_SCOPE = "Global Scope"
 			if (_functionCallerChecker.caller)
@@ -138,19 +140,122 @@ var en_Core;
 				alert("_functionCaller is 'undefined'");
 			}
 		}
-	)();
+	)();*/
+
+	// This answers the following question I had:
+	//
+	// --snippit from: _addDebugMode--
+	//#QUESTION: 	So... I wanted to put depency checks here, but that would turn into a big mess
+	//			 	pretty quickly. Because if I tested for the array _debug_modes here I'd technically
+	//				also have to check if Array.isArray() exists which we may have already established
+	//				elsewhere, but this function doesn't know that, so how do we make sure that this
+	//				program, housing these functions knows that?
+	//
+	//				The alternative is to not test for it, but to just force it if it doesn't allow us
+	//				to inject a new value, but that causes a whole slew of other possible problems later.
+	//				Think things like naming issues or property statechange detection later down the line.
+	//
+	// Simply because now we have a custom method that can rely on, because we can guarantee it inside
+	// the core or else it will cause errors. We'd know if something went wrong or is missing this way!
+	function _isArray(value)
+	{
+		if (Array.isArray)
+		{
+			return Array.isArray(value);
+		}
+		else
+		{
+			_throwError("Current environment does not carry native function: 'Array.isArray'");
+		}
+	}
+
+	function _isBoolean(value)
+	{
+		return (value === true) || (value === false);
+	}
+
+	function _isInteger(value)
+	{
+		var regexp = /^(\-|\+)?([0-9]+|Infinity)$/;
+
+    	return regexp.test(value);
+	}
+
+	function _isNumber(value)
+	{
+		return !isNaN(value);
+	}
+
+	function _stringify()
+	{
+		return JSON.stringify(arguments);
+	}
+
+	function WIP_stringify(value, key, indentation)
+	{
+		var normalised_value = value.toString();
+		var normalised_key;
+
+		var _NEWLINE = "\n";
+		var _TAB = "\t";
+
+		var indent = indentation || "";
+		var str = "";
+
+		if (key != undefined)
+		{
+			normalised_key = key.toString();
+			str += _NEWLINE;
+		}
+		else
+		{
+			normalised_key = typeof value;
+		}
+
+		str += indent + "[" + normalised_key + "] ";
+		
+		if (_isBoolean(value))
+		{
+			str += value ? "true" : "false";
+		}
+		else if (_isInteger(value))
+		{
+			str += parseInt(value, 10); // This is default base 10 for the time being!.
+		}
+		else if (_isNumber(value))
+		{
+			str += parseFloat(value);
+		}
+		else if (_isArray(value))
+		{
+			for (var i = 0, l = value.length; i < l; ++i)
+			{
+				str += WIP_stringify(value[i], i, indent + _TAB);
+			}
+		}
+		// else if (_isObject(value))
+		// {
+		// 	for (var k in value)
+		// 	{
+		// 		str += WIP_stringify(value[k], k, indent + _TAB);
+		// 	}
+		// }
+		else
+		{
+			// No idea man... debug message for future tracking? ERROR like a maddafakka?... sound fun :P
+
+			// For now just default to str:
+			str += normalised_value;
+		}
+		
+		return str;
+	}
+
+	en_Core.stringify = WIP_stringify;
 
 	/****************************************************************
 	 * Error stuff
 	 ****************************************************************/
-
-	 // HA! this doesn't work, coz we're initiated in the <head> tag.
-	 // At this point the <body> tag does not yet exist.
-	 /*
-	 	var error_pane = document.createElement(_DIV);
-	 	document.body.appendChild(error_pane);
-	 */
-
 	// Ok so we need something of a way to display errors on screen.
 	// We can build the functionality here and have the actual displaying done during initialisation
 
@@ -197,7 +302,6 @@ var en_Core;
 	/****************************************************************
 	 * Debugger stuff
 	 ****************************************************************/
-
 	/* 
 		#TODO: This should not just be a var declaration. This should be a property declaration.
 		That means we need to define what a property is, and what it does. Because I want to make
@@ -208,63 +312,58 @@ var en_Core;
 
 	var _debug_modes = [];
 
-	function _addDebugMode(name, description, add_debug_message_handler)
+	function _newDebugMode(name, description, add_debug_message_handler)
 	{
 		// Type checking
-		if (!name)
+		if (!name || typeof name != _TYPE_STRING)
 		{
-			_throwError("_addDebugMode requires parameter #1: 'name' <string>");
+			_throwError("_newDebugMode requires parameter #1: 'name' <string>");
 		}
 
-		if (!description)
+		if (!description || typeof name != _TYPE_STRING)
 		{
-			_throwError("_addDebugMode requires parameter #2: 'description' <string>");
+			_throwError("_newDebugMode requires parameter #2: 'description' <string>");
 		}
 
-		// Optional parameter defaults
 		if (typeof add_debug_message_handler != _TYPE_FUNCTION)
 		{
-			add_debug_message_handler = _DEFAULT_FUNCTION;
+			_throwError("_newDebugMode requires parameter #3: 'add_debug_message_handler' <function>");
 		}
 
-		//#QUESTION: 	So... I wanted to put depency checks here, but that would turn into a big mess
-		//			 	pretty quickly. Because if I tested for the array _debug_modes here I'd technically
-		//				also have to check if Array.isArray() exists which we've already established
-		//				elsewhere, but this function doesn't know that, so how do we make sure that this
-		//				program, housing these functions knows that?
-		//
-		//				The alternative is to not test for it, but to just force it if it doesn't allow us
-		//				to inject a new value, but that causes a whole slew of other possible problems later.
-		//				Think things like naming issues or property statechange detection later down the line.
-
-		// Turned prefix into an internal constant so we can test for it.
-		name = _doPrefixDebugMode(name);
-
-		// Could turn this into a factory function?
 		var mode = {
+			type: _TYPE_DEBUG_MODE,
 			name: name,
 			description: description,
 			AddDebugMessage: add_debug_message_handler
 		};
 
-		// Right the new mode is ready. Add it to the list. -- Also, my urge to indent the next few lines makes me
-		// wonder whether or not I should stick that in a seperate function or not.
-		
-			// Find a suitable spot for it.
-			var n = _debug_modes.length;
+		return mode;
+	}
 
-			// Inject
-			_debug_modes[n] = mode;
+	function _addDebugMode(mode)
+	{
+		if (mode.type != _TYPE_DEBUG_MODE)
+		{
+			_throwError("Attempt to register non-Debug_mode object: " + _stringify(mode));
+		}
 
-			// And make sure the outside world can see it.
-			en_Core[name] = n;
+		// Inject
+		_debug_modes[mode.name] = mode;
+
+		// And make sure the outside world can see it.
+		en_Core[_prefixDebugModeName(mode.name)] = mode.name;
 
 		return mode;
 	}
 
-	function _doPrefixDebugMode(mode_name)
+	function _prefixDebugModeName(debug_mode_name)
 	{
-		return _DEBUG_MODE_PREFIX + mode_name.toUpperCase();
+		if (typeof debug_mode_name != _TYPE_STRING)
+		{
+			_throwError("requires parameter #3: 'debug_mode_name' <string>");
+		}
+
+		return _DEBUG_MODE_PREFIX + debug_mode_name.toUpperCase();
 	}
 
 	function _populateDebugModes()
@@ -272,12 +371,11 @@ var en_Core;
 		// Reset for now
 		_debug_modes = [];
 
-		_addDebugMode("none", "Not debugging or spamming at the moment");
-		_addDebugMode("verbose", "spamming console with debug data", _captureAndPrintMessage);
-		_addDebugMode("silent", "Registering debug messages but not spamming console", _captureMessage);
+		// This feels ugly! :X
+		_addDebugMode( _newDebugMode("none", "Not debugging or spamming at the moment", _DEFAULT_FUNCTION) );
+		_addDebugMode( _newDebugMode("verbose", "spamming console with debug data", _captureAndPrintMessage) );
+		_addDebugMode( _newDebugMode("silent", "Registering debug messages but not spamming console", _captureMessage) );
 	}
-
-	_populateDebugModes();
 
 	var _captured_messages = [];
 
@@ -285,11 +383,11 @@ var en_Core;
 	//#IMPLICATION: Used in JavaScript due to console method: "log()"
 	function _printMessage()
 	{
-		console.log("en_Core: ", arguments);
+		console.log("en_Core: " + _stringify(arguments));
 	};
 
 	//#IMPLICATION: Used in JavaScript due to use of locally implied variable: "arguments"
-	function _new_captureMessage(args)
+	function _newCapturedMessage(args)
 	{
 		// Create a new message.
 		var cap_msg = {
@@ -297,7 +395,7 @@ var en_Core;
 			message: null
 		};
 
-		cap_msg.message = JSON.stringify(args);
+		cap_msg.message = _stringify(args);
 
 		return cap_msg;
 	};
@@ -310,7 +408,7 @@ var en_Core;
 			We can always change the data object format and what not, at a later time if we see fit.
 		*/
 
-		var capture_message = _new_captureMessage(arguments);
+		var capture_message = _newCapturedMessage(arguments);
 
 		_captured_messages.push(capture_message);
 	};
@@ -327,7 +425,7 @@ var en_Core;
 	{
 		if (!_debug_mode)
 		{
-			_throwError("DaFuq?!");
+			_throwError("No debug mode has been set");
 		}
 
 		_debug_mode.AddDebugMessage.call(null, arguments);
@@ -357,9 +455,7 @@ var en_Core;
 	{
 		return _debug_mode;
 	};
-
-	en_Core.SetDebugMode(en_Core.DEBUG_MODE_VERBOSE); // Setting debug mode to verbose by default.
-
+	
 	en_Core.GetCapturedDebugMessages = function()
 	{
 		return _captured_messages;
@@ -376,6 +472,9 @@ var en_Core;
 		{
 			_createErrorPane();
 		}
+
+		_populateDebugModes();
+		en_Core.SetDebugMode("verbose");
 
 	 	en_Core.AddDebugMessage("Switching to Silent debug mode.");
 		en_Core.SetDebugMode(en_Core.DEBUG_MODE_SILENT);
@@ -412,6 +511,7 @@ var en_Core;
 		//#QUESTION: 	How do we know we have full test coverage? Should we register each function in en_Core (The API so
 		// 				to speak) and check for each function whether it has a test?
 	
+		_newDebugMode_test();
 		_addDebugMode_test();
 
 		GetDebugMode_test();
@@ -420,11 +520,11 @@ var en_Core;
 	}
 
 	/****************************************************************
-	 * _addDebugMode()
+	 * _newDebugMode()
 	 ****************************************************************/
-	function _addDebugMode_test()
+	function _newDebugMode_test()
 	{
-		// Things we need:
+		// PREP
 		var debug_mode_name = "debug_mode_create_test_name";
 		var debug_mode_description = "debug_mode_create_test_description";
 		var debug_mode_message_function_works = false;
@@ -433,37 +533,58 @@ var en_Core;
 			debug_mode_message_function_works = true;
 		};
 
-		var temp = _debug_modes;
+		// EXECUTE
+		var mode_to_check = _newDebugMode(debug_mode_name, debug_mode_description, debugModeMessageFunction);
 
-		_debug_modes = [];
-
-		var mode_to_check = _addDebugMode(debug_mode_name, debug_mode_description, debugModeMessageFunction);
-
-		var prefixed_name = _doPrefixDebugMode(debug_mode_name);
-		if (en_Core[prefixed_name] !== 0)
+		// TESTS
+		if (mode_to_check.name != debug_mode_name)
 		{
-			_throwError("expected 'en_Core." + prefixed_name + " to contain value: " + 0 + ". Received: " + en_Core[prefixed_name]);
-		}
-
-		if (mode_to_check.name != prefixed_name)
-		{
-			_throwError("expected en_Core." + prefixed_name + ".name to contain value: " + prefixed_name + ". Received: " + mode_to_check.name);
+			_throwError("expected en_Core." + debug_mode_name + ".name to contain value: " + debug_mode_name + ". Received: " + mode_to_check.name);
 		}
 
 		if (mode_to_check.description != debug_mode_description)
 		{
-			_throwError("expected en_Core." + prefixed_name + ".description to contain value: " + debug_mode_description + ". Received: " + mode_to_check.description);
+			_throwError("expected en_Core." + debug_mode_name + ".description to contain value: " + debug_mode_description + ". Received: " + mode_to_check.description);
 		}
 
 		if (mode_to_check.AddDebugMessage != debugModeMessageFunction)
 		{
-			_throwError("expected en_Core." + prefixed_name + ".AddDebugMessage to contain value: " + debugModeMessageFunction + ". Received: " + mode_to_check.AddDebugMessage);
+			_throwError("expected en_Core." + debug_mode_name + ".AddDebugMessage to contain value: " + debugModeMessageFunction + ". Received: " + mode_to_check.AddDebugMessage);
 		}
 
 		mode_to_check.AddDebugMessage();
 		if (!debug_mode_message_function_works)
 		{
-			_throwError("en_Core." + prefixed_name + ".AddDebugMessage() did not execute properly.");
+			_throwError("en_Core." + debug_mode_name + ".AddDebugMessage() did not execute properly.");
+		}
+
+		// CLEAN
+		delete mode_to_check;
+	}
+
+	/****************************************************************
+	 * _addDebugMode()
+	 ****************************************************************/
+	function _addDebugMode_test()
+	{
+		var temp = _debug_modes;
+
+		_debug_modes = [];
+
+		var mode_to_check = {
+			type: _TYPE_DEBUG_MODE,
+			name: "_addDebugMode_test_name",
+			description: "_addDebugMode_test_description",
+			AddDebugMessage: function(){}
+		}
+
+		_addDebugMode(mode_to_check);
+
+		var prefixed_name = _prefixDebugModeName(mode_to_check.name);
+
+		if (en_Core[prefixed_name] !== mode_to_check.name)
+		{
+			_throwError("TEST FAILED: expected 'en_Core." + prefixed_name + " to contain value: " + mode_to_check.name + ". Received: " + en_Core[prefixed_name]);
 		}
 
 		// Time to clean up:
@@ -488,7 +609,7 @@ var en_Core;
 		var _retrieved_debug_mode = en_Core.GetDebugMode()
 		if (_retrieved_debug_mode != "TEST")
 		{
-			_throwError("expected en_Core.GetDebugMode to return value: " + _debug_mode + ". Received: " + _retrieved_debug_mode);
+			_throwError("TEST FAILED: expected en_Core.GetDebugMode to return value: " + _debug_mode + ". Received: " + _retrieved_debug_mode);
 		}
 
 		_debug_mode = temp;
@@ -504,9 +625,9 @@ var en_Core;
 		_captured_messages = [];
 
 		// Return should be an array:
-		if ( !Array.isArray(en_Core.GetCapturedDebugMessages()) )
+		if ( !_isArray(en_Core.GetCapturedDebugMessages()) )
 		{
-			_throwError("en_Core.GetCapturedDebugMessages() did not return an array as expected");
+			_throwError("TEST FAILED: en_Core.GetCapturedDebugMessages() did not return an array as expected");
 		}
 
 		_captured_messages = temp;
@@ -517,7 +638,7 @@ var en_Core;
 	 ****************************************************************/
 	 function SetDebugMode_test()
 	 {
-	 	temp = _debug_mode;
+	 	var temp = _debug_mode;
 
 		// Empty sets should not be accepted:
 		en_Core.SetDebugMode();
@@ -526,7 +647,7 @@ var en_Core;
 		// See: var s="a";console.log("s after initiation:",s);var f=function(p){s=p};f();console.log("s after f():",s);console.log(s==undefined);
 		if (_debug_mode == undefined)
 		{
-			_throwError("en_Core.SetDebugMode() allows empty calls");
+			_throwError("TEST FAILED: en_Core.SetDebugMode() allows empty calls");
 		}
 
 		// Values not in en_Core.DEBUG_MODES should not be accepted:
@@ -534,16 +655,15 @@ var en_Core;
 
 		if (_debug_mode == "Random string")
 		{
-			_throwError("en_Core.SetDebugMode() executes values not in en_Core.DEBUG_MODES");
+			_throwError("TEST FAILED: en_Core.SetDebugMode() executes values not in en_Core.DEBUG_MODES");
 		}
 
 		// Make sure it actually still works.
-		var mode = _debug_modes[0];
-		en_Core.SetDebugMode(0);
+		en_Core.SetDebugMode(temp.name);
 
-		if (_debug_mode != mode)
+		if (_debug_mode != temp)
 		{
-			_throwError("en_Core.SetDebugMode() expected value: '" + JSON.stringify(mode) + "' but received: '" + JSON.stringify(_debug_mode));
+			_throwError("TEST FAILED: en_Core.SetDebugMode() expected value: '" + _stringify(temp) + "' but received: '" + _stringify(_debug_mode));
 		}
 
 		_debug_mode = temp;
