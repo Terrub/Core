@@ -372,7 +372,7 @@ var en_Core;
 		_debug_modes = [];
 
 		// This feels ugly! :X
-		_addDebugMode( _newDebugMode("none", "Not debugging or spamming at the moment", _DEFAULT_FUNCTION) );
+		_addDebugMode( _newDebugMode("none", "Not debugging at the moment", _DEFAULT_FUNCTION) );
 		_addDebugMode( _newDebugMode("verbose", "spamming console with debug data", _captureAndPrintMessage) );
 		_addDebugMode( _newDebugMode("silent", "Registering debug messages but not spamming console", _captureMessage) );
 	}
