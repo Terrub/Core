@@ -13,26 +13,39 @@
 
 	// Initiators
 
+	// Constants:
+	var _PROPERTY_STATE_INITIATED = "_property_state_initiated";
+	var _PROPERTY_STATE_INVALIDATED = "_propert_state_invalidated";
+	var _PROPERTY_STATE_VALIDATED = "_property_state_validated";
+
+	var _VALIDATOR_STATE_IDLE = "_validator_state_idle";
+	var _VALIDATOR_STATE_VALIDATING = "_validator_state_validating";
+	var _VALIDATOR_STATE_INITIATED = "_validator_state_initiated";
+
+	var _validator_state = _VALIDATOR_STATE_IDLE;
+
 	// Thse are values pretty much. Should probably turn them into setter/getters later
-	var _frames_per_second = 30;
+	var _frames_per_second = 60;
 	var _seconds_per_frame = 1 / _frames_per_second;
 
-	var _timeout_unit = 1000 // Milliseconds
+	var _interval_unit = 1000 // Milliseconds
 
-	// Internal trackers or knowledge... database?
+	var _time_till_next_frame = _seconds_per_frame * _interval_unit;
+
+	var _portion_of_frame_not_rendering = 0.5; // We spend about half the framecycle validating next render.
+
+	// Internal knowledge
 	var _property_list = {};
 
 	var _current_chain_link;
 	var _chain = {};
 
-	var _last_update;
+	var _last_validation;
 
+	// Internal Trackers
+	var _timers = {};
 	var _missed_frames = 0;
 	var _time_since_last_frame_drop = 0;
-
-	var _is_updating = false;
-
-	var _timers = {};
 
 	/***********************************************************************************************\
 	*	Core functions
@@ -168,7 +181,7 @@
 
 		document.body.appendChild(_screen);
 
-		_last_update = _getTimeStamp();
+		_last_validation = _getTimeStamp();
 
 		_addProperty("_screen_dimensions", _validateScreenDimensions);
 
@@ -179,6 +192,13 @@
 		}
 
 		window.addEventListener("resize", resizeScreen);
+
+		var testResults = _runTests()
+
+		if (testResults.failed > 0)
+		{
+			alert(testResults.failed + "/" + testResults.total + " TESTS FAILED -- Program not running with certainty");
+		}
 
 		_screenTesting();
 	}
@@ -202,47 +222,52 @@
 		}
 
 		// _timers[_timer.toString()] = "stopped";
-		clearTimeout(_timer);
+		clearInterval(_timer);
 
 	}
 
-	// In here we need to iteratively do the first things on our to-do list till it's empty, or we ran out of time.
-	function _updateDisplay()
+	function _initiateValidation()
 	{
-		var frame_time = _getTimeStamp();
-		// console.log("updating: ", frame_time);
-		var time_out = _seconds_per_frame * _timeout_unit;
-		
-		// Update the timer to allow for a callback to happen after we're done with this frame.
-		_timer = setTimeout(_updateDisplay, time_out);
-		// _timers[_timer.toString()] = "running";
-
-		// That is, if we're done with the last frame...
-		if (_is_updating)
+		if (_validator_state == _VALIDATOR_STATE_INITIATED
+		||	_validator_state == _VALIDATOR_STATE_VALIDATING)
 		{
-			// Right now every property invalidation calls _updateDisplay() so this will probably give us false readings, but we'll see what happens.
-			_registerMissedFrame(frame_time);
+			return;
+		}
+
+		_validator_state = _VALIDATOR_STATE_INITIATED;
+
+		_resetTimer();
+	}
+
+	function _resetTimer()
+	{
+		_time_till_next_frame = _seconds_per_frame * _interval_unit;
+
+		_timer = setInterval(_validateProperties, _time_till_next_frame);
+	}
+
+	// In here we need to iteratively do the first things on our to-do list till it's empty, or we ran out of time.
+	function _validateProperties()
+	{
+		// Technically there's nothing to do atm.
+		if (!_current_chain_link)
+		{
+			_stopTheClock();
+
+			_validator_state = _VALIDATOR_STATE_IDLE;
 
 			return;
 		}
 
-		_is_updating = true;
+		_validator_state = _VALIDATOR_STATE_VALIDATING;
 
-		// Our last update is in ms since epoch. So we need to offset it with the current ms since epoch.
-		// We reverse the operation so we don't have to fiddle with unary operators.
-		var elapsed_time = _getTimeStamp() - _last_update;
+		var threshold = _getTimeStamp() + _time_till_next_frame;
 
-		var threshold = elapsed_time + time_out;
-
-		var tasks_attempted = 0;
 		var tasks_completed = 0;
-		var clocks_stopped = 0;
 
 		// Check if we have time for another task first:
-		while ( (_getTimeStamp() - frame_time) < threshold )
+		while (_getTimeStamp() < threshold)
 		{
-			tasks_attempted++;
-
 			// Check the to-do list for something we can do,
 			if (_current_chain_link)
 			{
@@ -253,19 +278,11 @@
 			}
 			else
 			{
-				// Or exit. and cull the timer. We're done till the next invalidation.
-				clocks_stopped++;
-
-				_stopTheClock();
-
 				break;
 			}
 		}
 
-		// Feierabend!
-		console.log("Attempted to complete: " + tasks_attempted + ", stopped: " + clocks_stopped + " clocks. And managed to complete: " + tasks_completed);
-		_last_update = _getTimeStamp();
-		_is_updating = false;
+		console.log("Tasks completed:" + tasks_completed);
 	}
 
 	function _registerMissedFrame(frame_time)
@@ -294,7 +311,7 @@
 		var property = {
 			name: name,
 			validator: validationFunction,
-			is_valid: true,
+			state: _PROPERTY_STATE_INITIATED,
 			invalidation_calls: 0
 		}
 
@@ -316,20 +333,20 @@
 
 		property.invalidation_calls++;
 
-		if (!property.is_valid)
+		if (property.state == _PROPERTY_STATE_INVALIDATED)
 		{
 			// No need to invalidate it again.
 			return;
 		}
 
 		// Set the invalid flag inside the property itself as well.
-		property.is_valid = false;
+		property.state = _PROPERTY_STATE_INVALIDATED;
 
-		// Add it to do the chain so we know that we need to do something with it later.
+		// Add it to the to-do chain so we know that we need to do something with it later.
 		_addPropertyToChain(property);
 
-		// Kick our renderer back into action if it's sleeping again.
-		_updateDisplay();
+		// Wake up our validator if it's sleeping again.
+		_initiateValidation();
 	}
 
 	function _validate(property_name)
@@ -354,7 +371,7 @@
 
 		_removePropertyFromChain(property);
 
-		property.is_valid = true;
+		property.state = _PROPERTY_STATE_VALIDATED;
 
 		console.log(property_name + ' was invalidated ' + property.invalidation_calls + ' time(s) before validation.');
 
@@ -522,6 +539,94 @@
 	/***********************************************************************************************\
 	*	Test area.
 	\***********************************************************************************************/
+	var _tests_total = 0;
+	var _tests_succeeded = 0;
+	var _tests_failed = 0;
+
+	var _tests = {};
+
+	function _registerAsTestFunction(name, func)
+	{
+		if (!_isFunction(func))
+		{
+			console.log("Attempt to register non-function as test function: ", func);
+			return;
+		}
+
+		_tests[name] = func;
+	}
+
+	function _runTests()
+	{
+		var result = {};
+
+		for (var test_name in _tests)
+		{
+			_tests_total++;
+
+			try
+			{
+				_tests[test_name]();
+			}
+			catch (e)
+			{
+				console.log(e);
+				_tests_failed++
+			}
+		}
+
+		result.succeeded = _tests_succeeded || 0;
+		result.failed = _tests_failed || 0;
+		result.total = _tests_total || 0;
+
+		return result;
+	}
+
+	function _testSucceededIf(statement)
+	{
+		if (statement === true)
+		{
+			_tests_succeeded++;
+		}
+		else // Fail by default
+		{
+			// Test FAIL
+			_tests_failed++;
+		}
+	}
+	
+	// Update test -> Old value should change to intended value
+	_registerAsTestFunction('update_test',
+		function()
+		{
+			var temp = _validator_state;
+
+			_validator_state = _VALIDATOR_STATE_IDLE;
+
+			_initiateValidation();
+
+			_testSucceededIf(_validator_state == _VALIDATOR_STATE_INITIATED);
+
+			_validator_state = temp;
+		}	
+	);
+
+	// redundancy test -> Current value stays the same
+	_registerAsTestFunction('redundancy_test',
+		function()
+		{
+			var temp = _validator_state;
+
+			_validator_state = _VALIDATOR_STATE_INITIATED;
+
+			_initiateValidation();
+
+			_testSucceededIf(_validator_state == _VALIDATOR_STATE_INITIATED);
+
+			_validator_state = temp;
+		}
+	);
+	
 
 	/***********************************************************************************************\
 	*	Run da maddafakka!!!
