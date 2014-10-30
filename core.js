@@ -1,3 +1,33 @@
+/***********************************************************************************************\
+*	
+*	NOTE PAD:
+*
+*-----------------------------------------------------------------------------------------------
+
+	#TODO:
+	304		This can generate a potential infinite loop on slower systems or when 
+			_getTimeStamp and threshold are running out of sync!
+	
+	-		Create a string formatter function like prt('message' <string>[, 'param#' <*>])
+	-		Create a wrapper function for console.log so we can easily turn them off n shit
+	-		Look into using the validateproperties as an engine for threads?
+	-		REFACTOR
+	-		Create an error state and display mode for the entire application
+	-		Make the error state object based so we can reuse it on every ui element.
+	-		REFACTOR
+	-		Look into creating a custom function object that allows more flexible testing.
+	-		Create more definitions:
+
+			-	At this point we need start defining the different testing functions and how we
+				can apply them to the functions created using the new custom function
+				object/prototype thing/whatever. Make it tie into the error state!
+	-		Make coffee?
+
+*-----------------------------------------------------------------------------------------------
+\***********************************************************************************************/
+
+
+
 // Just run it for now.
 (function()
 {
@@ -32,32 +62,25 @@
 
 	var _time_till_next_frame = _seconds_per_frame * _interval_unit;
 
-	var _portion_of_frame_not_rendering = 0.5; // We spend about half the framecycle validating next render.
-
 	// Internal knowledge
 	var _property_list = {};
 
 	var _current_chain_link;
 	var _chain = {};
 
-	var _last_validation;
-
-	// Internal Trackers
-	var _timers = {};
-	var _missed_frames = 0;
-	var _time_since_last_frame_drop = 0;
-
 	/***********************************************************************************************\
 	*	Core functions
 	\***********************************************************************************************/
-	function _getTimeStamp()
-	{
-		return Date.now();
-	}
-
 	function _isString(str)
 	{
 		return (typeof str === "string");
+	}
+
+	function _isInteger(value)
+	{
+		var regexp = /^(\-|\+)?([0-9]+)$/;
+
+    	return regexp.test(value);
 	}
 
 	function _isNumber(num)
@@ -104,6 +127,12 @@
 	function _isUndefined(value)
 	{
 		return (typeof value === "undefined");
+	}
+
+
+	function _getTimeStamp()
+	{
+		return Date.now();
 	}
 
 	/***********************************************************************************************\
@@ -181,14 +210,12 @@
 
 		document.body.appendChild(_screen);
 
-		_last_validation = _getTimeStamp();
-
 		_addProperty("_screen_dimensions", _validateScreenDimensions);
 
 		// Lets try something a little dodgy:
 		function resizeScreen()
 		{
-			_invalidate("_screen_dimensions");
+			_invalidateProperty("_screen_dimensions");
 		}
 
 		window.addEventListener("resize", resizeScreen);
@@ -207,23 +234,18 @@
 	{
 		_screen.height = window.innerHeight;
 		_screen.width = window.innerWidth;
+
+		// Quit yer lollygaggin and start doin' sommin'!
+		_screenTest();
 	}
 	
 	/***********************************************************************************************\
 	*	Internal functions
 	\***********************************************************************************************/
-	function _stopTheClock()
+
+	function _isActiveTimer(timer)
 	{
-		if (_isUndefined(_timer)
-		||	!_isNumber(_timer))
-		{
-			console.log("It seems we've attempted to stop a timer we can't find: ", _timer);
-			return false;
-		}
-
-		// _timers[_timer.toString()] = "stopped";
-		clearInterval(_timer);
-
+		return (!_isUndefined(_timer) && _isNumber(_timer));
 	}
 
 	function _initiateValidation()
@@ -231,19 +253,51 @@
 		if (_validator_state == _VALIDATOR_STATE_INITIATED
 		||	_validator_state == _VALIDATOR_STATE_VALIDATING)
 		{
-			return;
+			return false;
 		}
 
 		_validator_state = _VALIDATOR_STATE_INITIATED;
 
-		_resetTimer();
+		_resetValidationTimer();
 	}
 
-	function _resetTimer()
+	function _resetValidationTimer()
 	{
 		_time_till_next_frame = _seconds_per_frame * _interval_unit;
 
+		_startValidationTimer();
+	}
+
+	function _startValidationTimer()
+	{
+		if (_isActiveTimer(_timer))
+		{
+			console.log("Attempt to activate excess timer.");
+
+			return false;
+		}
+
 		_timer = setInterval(_validateProperties, _time_till_next_frame);
+
+		console.log("started timer: ", _timer);
+	}
+
+	function _stopValidation()
+	{
+		if (!_isActiveTimer(_timer))
+		{
+			console.log("Attempt to deactivate inactive timer: ", _timer);
+
+			return false;
+		}
+
+		clearInterval(_timer);
+
+		console.log("closed timer:" , _timer);
+
+		_timer = null;
+
+		_validator_state = _VALIDATOR_STATE_IDLE;
 	}
 
 	// In here we need to iteratively do the first things on our to-do list till it's empty, or we ran out of time.
@@ -252,9 +306,7 @@
 		// Technically there's nothing to do atm.
 		if (!_current_chain_link)
 		{
-			_stopTheClock();
-
-			_validator_state = _VALIDATOR_STATE_IDLE;
+			_stopValidation();
 
 			return;
 		}
@@ -265,14 +317,15 @@
 
 		var tasks_completed = 0;
 
+		//#TODO: This can generate a potential infinite loop on slower systems or when _getTimeStamp and threshold are running out of sync!
 		// Check if we have time for another task first:
 		while (_getTimeStamp() < threshold)
 		{
 			// Check the to-do list for something we can do,
 			if (_current_chain_link)
 			{
-				// Ok... we need to do something, so lets DOOO EEET!
-				_validate(_current_chain_link.name);
+				// DOOO EEET!
+				_validateProperty(_current_chain_link.name);
 
 				tasks_completed++;
 			}
@@ -285,27 +338,20 @@
 		console.log("Tasks completed:" + tasks_completed);
 	}
 
-	function _registerMissedFrame(frame_time)
-	{
-		console.log("Missed a frame at: ", frame_time);
-
-		_missed_frames++;
-
-		_time_since_last_frame_drop = frame_time;
-	}
-
 	function _addProperty(name, validationFunction)
 	{
 		if (!_isString(name))
 		{
 			console.log("Yeah... that's not a real string: ", name);
-			return;
+
+			return false;
 		}
 
 		if (!_isFunction(validationFunction))
 		{
 			console.log("Yeah... that's not a real function: ", validationFunction);
-			return;
+
+			return false;
 		}
 
 		var property = {
@@ -317,10 +363,10 @@
 
 		_property_list[name] = property;
 
-		_invalidate(name);
+		_invalidateProperty(name);
 	}
 
-	function _invalidate(property_name)
+	function _invalidateProperty(property_name)
 	{
 		var property = _property_list[property_name];
 
@@ -328,7 +374,7 @@
 		{
 			console.log("Attempt to invalidate unknown property: ", property_name);
 
-			return false; // I guess?
+			return false;
 		}
 
 		property.invalidation_calls++;
@@ -339,17 +385,17 @@
 			return;
 		}
 
-		// Set the invalid flag inside the property itself as well.
-		property.state = _PROPERTY_STATE_INVALIDATED;
-
 		// Add it to the to-do chain so we know that we need to do something with it later.
 		_addPropertyToChain(property);
+
+		// Set the invalid flag inside the property itself as well.
+		property.state = _PROPERTY_STATE_INVALIDATED;
 
 		// Wake up our validator if it's sleeping again.
 		_initiateValidation();
 	}
 
-	function _validate(property_name)
+	function _validateProperty(property_name)
 	{
 		var property = _property_list[property_name];
 
@@ -369,9 +415,9 @@
 
 		validator();
 
-		_removePropertyFromChain(property);
-
 		property.state = _PROPERTY_STATE_VALIDATED;
+
+		_removePropertyFromChain(property);
 
 		console.log(property_name + ' was invalidated ' + property.invalidation_calls + ' time(s) before validation.');
 
@@ -450,10 +496,15 @@
 			}
 		}
 
-		// DESTRUCTOOOOOOR!!!
+		// aaaaaand it's gone.
 		delete _chain[property.name];
 	}
 
+	/***********************************************************************************************\
+	*	Sandbox/Playground stuff || IGNORE THESE PLEASE
+	\***********************************************************************************************/
+
+	var _screenTest;
 
 	function _screenTesting()
 	{
@@ -462,7 +513,7 @@
 		var current_colour;
 
 		// Initiators
-		g = _screen.getContext('2d');
+		g = _screen.getContext('2d'); // <-- This is immediate mode! Be careful!
 		
 		colours = {
 			red: 		{name: 'red',		prev: 'purple',	next: 'orange'},
@@ -480,8 +531,6 @@
 		{
 			alert("Could not get hold of a graphics context");
 		}
-
-		_showNextColour();
 
 		_screen.addEventListener("click", _showNextColour, false);
 
@@ -532,7 +581,10 @@
 			graphics.closePath();
 		}
 
-		// Destructor
+		_screenTest = function()
+		{
+			_showNextColour();
+		}
 	}
 	
 	
