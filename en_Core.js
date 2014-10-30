@@ -360,7 +360,7 @@ var en_Core;
 	{
 		if (typeof debug_mode_name != _TYPE_STRING)
 		{
-			_throwError("requires parameter #3: 'debug_mode_name' <string>");
+			_throwError("requires parameter #1: 'debug_mode_name' <string>");
 		}
 
 		return _DEBUG_MODE_PREFIX + debug_mode_name.toUpperCase();
