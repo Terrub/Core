@@ -194,11 +194,13 @@
 	
 	function _hookInitializationEvent()
 	{
-		_addEventListener.call(document, _document_ready_event, function loadUp()
+		function loadUp()
 		{
 			_removeEventListener.call(document, _document_ready_event, loadUp);
 			_initialize();
-		});
+		}
+
+		_addEventListener.call(document, _document_ready_event, loadUp);
 	}
 
 	function _initialize()
