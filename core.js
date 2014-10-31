@@ -5,9 +5,6 @@
 *-----------------------------------------------------------------------------------------------
 
 	#TODO:
-	304		This can generate a potential infinite loop on slower systems or when 
-			_getTimeStamp and threshold are running out of sync!
-	
 	-		Create a string formatter function like prt('message' <string>[, 'param#' <*>])
 	-		Create a wrapper function for console.log so we can easily turn them off n shit
 	-		Look into using the validateproperties as an engine for threads?
@@ -31,7 +28,7 @@
 // Just run it for now.
 (function()
 {
-	// Declarations
+	// _internal_declarations
 	var _container;
 	var _screen;
 
@@ -43,7 +40,7 @@
 
 	// Initiators
 
-	// Constants:
+	// _INTERNAL_CONSTANTS:
 	var _PROPERTY_STATE_INITIATED = "_property_state_initiated";
 	var _PROPERTY_STATE_INVALIDATED = "_propert_state_invalidated";
 	var _PROPERTY_STATE_VALIDATED = "_property_state_validated";
@@ -54,7 +51,7 @@
 
 	var _validator_state = _VALIDATOR_STATE_IDLE;
 
-	// Thse are values pretty much. Should probably turn them into setter/getters later
+	// These are values pretty much. Should probably turn them into setter/getters later
 	var _frames_per_second = 60;
 	var _seconds_per_frame = 1 / _frames_per_second;
 
@@ -174,7 +171,7 @@
 			_removeEventListener = document.removeEventListener;
 			_document_ready_event = "DOMContentLoaded";
 
-			// console.log("Using First event listener option.");
+			console.log("Using First event listener option.");
 		}
 		else if (document.attachEvent)
 		{
@@ -182,7 +179,7 @@
 			_removeEventListener = document.detachEvent;
 			_document_ready_event = "onreadystatechange";
 			
-			// console.log("Using Second event listener option.");
+			console.log("Using Second event listener option.");
 		}
 		else
 		{
@@ -345,14 +342,14 @@
 	{
 		if (!_isString(name))
 		{
-			console.log("Yeah... that's not a real string: ", name);
+			console.log("Expected string as argument #1, received: ", name);
 
 			return false;
 		}
 
 		if (!_isFunction(validationFunction))
 		{
-			console.log("Yeah... that's not a real function: ", validationFunction);
+			console.log("Expected function as argument #2, received: ", validationFunction);
 
 			return false;
 		}
@@ -405,6 +402,7 @@
 		if (!property)
 		{
 			console.log("Attempt to validate unknown property: ", property);
+
 			return;
 		}
 
@@ -413,6 +411,7 @@
 		if (!_isFunction(validator))
 		{
 			console.log("Attempt to call non-functional validator: ", validator);
+
 			return;
 		}
 
@@ -605,6 +604,7 @@
 		if (!_isFunction(func))
 		{
 			console.log("Attempt to register non-function as test function: ", func);
+
 			return;
 		}
 
