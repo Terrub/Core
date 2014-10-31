@@ -9,12 +9,20 @@
 	-		Create a wrapper function for console.log so we can easily turn them off n shit
 	-		Look into using the validateproperties as an engine for threads?
 	-		REFACTOR
+			- I want all responsibilities locked to it's respective owners.
+			- See how many defensive checks we'd have to use per function to prevent it from
+			  being abusable if it were publically accessible, then try to get rid of as many of
+			  these defensive checks as possible using proper scoping!
+			- The goal is to have functions that cannot break in their current form with as
+			  little checks as possible.
 	-		Create an error state and display mode for the entire application
 	-		Make the error state object based so we can reuse it on every ui element.
 	-		REFACTOR
 	-		Look into creating a custom function object that allows more flexible testing.
+			- We need to split up what defines a function to us: Name, scope, declarations,
+			  initiations, body, destructions, etc. All these things need to be defined and CRUD
+			  tested.
 	-		Create more definitions:
-
 			-	At this point we need start defining the different testing functions and how we
 				can apply them to the functions created using the new custom function
 				object/prototype thing/whatever. Make it tie into the error state!
@@ -68,6 +76,8 @@
 	/***********************************************************************************************\
 	*	Core functions
 	\***********************************************************************************************/
+
+	// Definitions:
 	function _isString(str)
 	{
 		return (typeof str === "string");
@@ -99,23 +109,7 @@
 	{
 		return (typeof obj === "object");
 	}
-	/*
-	function _isAcceptableValue(val)
-	{
-		var result = false;
 
-		if (_isString(val)
-		||	_isNumber(val)
-		||	_isBoolean(val)
-		||	_isArray(val)
-		||	_isObject(val))
-		{
-			result = true;
-		}
-
-		return result;
-	}
-	*/
 	function _isFunction(fnc)
 	{
 		return (typeof fnc === "function");
@@ -126,7 +120,7 @@
 		return (typeof value === "undefined");
 	}
 
-
+	// Common functions:
 	function _getTimeStamp()
 	{
 		return Date.now();
