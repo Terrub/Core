@@ -60,7 +60,7 @@
 
 	var _interval_unit = 1000 // Milliseconds
 
-	var _time_till_next_frame = _seconds_per_frame * _interval_unit;
+	var _interval_unit_per_frame = _seconds_per_frame * _interval_unit;
 
 	// Internal knowledge
 	var _property_list = {};
@@ -260,13 +260,6 @@
 
 		_validator_state = _VALIDATOR_STATE_INITIATED;
 
-		_resetValidationTimer();
-	}
-
-	function _resetValidationTimer()
-	{
-		_time_till_next_frame = _seconds_per_frame * _interval_unit;
-
 		_startValidationTimer();
 	}
 
@@ -279,7 +272,18 @@
 			return false;
 		}
 
-		_timer = setInterval(_validateProperties, _time_till_next_frame);
+		var interval = _seconds_per_frame * _interval_unit;
+
+		function intervalExecution()
+		{
+			_validateProperties(interval);
+		}
+
+		// Now we're officially validating.
+		_validator_state = _VALIDATOR_STATE_VALIDATING;
+
+		// So get the timer started so we can empty the validation chain.
+		_timer = setInterval(intervalExecution, interval);
 
 		console.log("started timer: ", _timer);
 	}
@@ -303,41 +307,38 @@
 	}
 
 	// In here we need to iteratively do the first things on our to-do list till it's empty, or we ran out of time.
-	function _validateProperties()
+	function _validateProperties(time_left)
 	{
-		// Technically there's nothing to do atm.
-		if (!_current_chain_link)
+		var current_property;
+
+		var start_time;
+		var execution_time;
+
+		var properties_validated = 0;
+
+		while (time_left > 0)
 		{
-			_stopValidation();
-
-			return;
-		}
-
-		_validator_state = _VALIDATOR_STATE_VALIDATING;
-
-		var threshold = _getTimeStamp() + _time_till_next_frame;
-
-		var tasks_completed = 0;
-
-		//#TODO: This can generate a potential infinite loop on slower systems or when _getTimeStamp and threshold are running out of sync!
-		// Check if we have time for another task first:
-		while (_getTimeStamp() < threshold)
-		{
-			// Check the to-do list for something we can do,
-			if (_current_chain_link)
+			if (!_current_chain_link)
 			{
-				// DOOO EEET!
-				_validateProperty(_current_chain_link.name);
+				_stopValidation();
 
-				tasks_completed++;
-			}
-			else
-			{
 				break;
 			}
+
+			start_time = _getTimeStamp();
+
+			_validateProperty(_current_chain_link.name);
+
+			properties_validated++;
+
+			execution_time = _getTimeStamp() - start_time;
+
+			console.log("validated property number: " + properties_validated + " in " + execution_time + "ms.");
+
+			time_left -= execution_time;
 		}
 
-		console.log("Tasks completed:" + tasks_completed);
+		console.log("Properties validated:" + properties_validated);
 	}
 
 	function _addProperty(name, validationFunction)
