@@ -5,7 +5,6 @@
 *-----------------------------------------------------------------------------------------------
 
 	#TODO:
-	-		Create a string formatter function like prt('message' <string>[, 'param#' <*>])
 	-		Create a wrapper function for console.log so we can easily turn them off n shit
 	-		Look into using the validateproperties as an engine for threads?
 	-		REFACTOR
@@ -16,6 +15,8 @@
 			- The goal is to have functions that cannot break in their current form with as
 			  little checks as possible.
 	-		Create an error state and display mode for the entire application
+	-		Create a separate error throw thing for test failures. Currently it requires
+			breakpoints to figure out what died.
 	-		Make the error state object based so we can reuse it on every ui element.
 	-		REFACTOR
 	-		Look into creating a custom function object that allows more flexible testing.
@@ -126,31 +127,107 @@
 		return Date.now();
 	}
 
+	/**
+	 * Formatises a list of variable arguments into the allocated position of the given format.
+	 * 
+	 * Arguments:
+	 * 	<string> "format"
+	 *		The format the given arguments have to be allocated to.
+	 *	<*> ... (optional)
+	 *		A variable list of arguments that will ordered into the given format.
+	 * 		Available format options:
+	 *		"{@x:T}" where x is the position of the argument in the provided argument list (optional)
+	 *		and T = the required type (or types?) the argument needs to adhere to.
+	 *		Possible types are:
+	 *		- 'b' Boolean
+	 *		- 'i' Integer
+	 *		- 'n' Number
+	 *		- 's' String
+	 *
+	 * Return:
+	 *	<string>
+	 *		The formatted arguments
+	 */
+	function _formatize(format)
+	{
+		if (!_isString(format))
+		{
+			console.log("function '_formatize' expected string as argument #1, received: ", format);
+
+			return false;
+		}
+		
+		var args = arguments;
+
+		var supported_types = {
+			b: _isBoolean,
+			i: _isInteger,
+			n: _isNumber,
+			s: _isString
+		}
+		var type_flags = "bins";
+
+		// Attempt to find n replace en masse to prevent loops. Hopefully the 'g' modifier is enough
+		var pattern = new RegExp("\{@([0-9]+):([a-z])\}", "gi");
+		
+		function typeCheckOrBust(match, position, type_flag)
+		{
+			var insert_value = args[position];
+			if (!insert_value)
+			{
+				console.log("Formatize parameter mismatch");
+				
+				return "<parameter mismatch>";
+			} 
+
+			var type_check = supported_types[type_flag];
+			if (!type_check)
+			{
+				console.log("Formatize unsupported type");
+
+				return "<unsupported type>";
+			}
+
+			if (!type_check(insert_value))
+			{
+				console.log("Formatize type mismatch");
+
+				return "<type mismatch>";
+			}
+
+			return insert_value;
+		}
+
+		return format.replace(pattern, typeCheckOrBust);
+	}
+
 	/***********************************************************************************************\
 	*	Contextual functionality
 	\***********************************************************************************************/
 	
 	/**
-	 * The whole idea behind this function is that we can, in the (near) future figure out a way to determine
-	 * what version or environment we're running inside. Either by feature testing or by trying to read 
-	 * standard methods available to read current version and software settings, etc.
+	 * The whole idea behind this function is that we can, in the (near) future figure out a way to
+	 * determine what version or environment we're running inside. Either by feature testing or by
+	 * trying to read standard methods available to read current version and software settings, etc.
 	 * 
-	 * Based on what we can figure out we can then try to load up different versions of certain key variables
-	 * and functions that may differ per version or platform. I hope to be able to ease the ways of allowing
-	 * backwards compatabilty of the project itself.
+	 * Based on what we can figure out we can then try to load up different versions of certain key
+	 * variables and functions that may differ per version or platform. I hope to be able to ease the
+	 * ways of allowing backwards compatabilty of the project itself.
 	 *
-	 * Over time, when we have a self testing system running, we can tentatively try different versions to 
-	 * test if we can optimise the system within those parameters.
+	 * Over time, when we have a self testing system running, we can tentatively try different
+	 * versions to test if we can optimise the system within those parameters.
 	 */
 	function _identifyEnvironment()
 	{
-		// This entire system requires a visualisation method. Right now I'm using a screen based on a canvas.
+		// This entire system requires a visualisation method. Right now I'm using a canvas.
 		_screen = document.createElement("canvas");
 
 		//#QUESTION:
-		// See if we can hook our initialisation on the onload call of the canvas, coz we did create it, we just didn't append it to the DOM yet, does that count?
+		// See if we can hook our initialisation on the onload call of the canvas, coz we did create
+		// it, we just didn't append it to the DOM yet, does that count?
 
-		// If we don't have a canvas, then we might as well just exit right here and not bother with anything. For now at least.
+		// If we don't have a canvas, then we might as well just exit right here and not bother with
+		// anything. For now at least.
 		if (_screen == undefined)
 		{
 			alert("No screen could be detected.\nCore load finished unsuccesfully.");
@@ -297,7 +374,8 @@
 		_validator_state = _VALIDATOR_STATE_IDLE;
 	}
 
-	// In here we need to iteratively do the first things on our to-do list till it's empty, or we ran out of time.
+	// In here we need to iteratively do the first things on our to-do list till it's empty, or we
+	// ran out of time.
 	function _validateProperties(time_left)
 	{
 		var current_property;
@@ -336,14 +414,14 @@
 	{
 		if (!_isString(name))
 		{
-			console.log("Expected string as argument #1, received: ", name);
+			console.log("function '_addProperty' expected string as argument #1, received: ", name);
 
 			return false;
 		}
 
 		if (!_isFunction(validationFunction))
 		{
-			console.log("Expected function as argument #2, received: ", validationFunction);
+			console.log("function '_addProperty' expected function as argument #2, received: ", validationFunction);
 
 			return false;
 		}
@@ -593,7 +671,7 @@
 
 	var _tests = {};
 
-	function _registerAsTestFunction(name, func)
+	function _registerAsTestFunction(target_function, name, func)
 	{
 		if (!_isFunction(func))
 		{
@@ -645,7 +723,7 @@
 	}
 	
 	// Update test -> Old value should change to intended value
-	_registerAsTestFunction('update_test',
+	_registerAsTestFunction('_initiateValidation', "update test",
 		function()
 		{
 			var temp = _validator_state;
@@ -661,7 +739,7 @@
 	);
 
 	// redundancy test -> Current value stays the same
-	_registerAsTestFunction('redundancy_test',
+	_registerAsTestFunction('_initiateValidation', "redundancy test",
 		function()
 		{
 			var temp = _validator_state;
@@ -675,7 +753,57 @@
 			_validator_state = temp;
 		}
 	);
-	
+
+	_registerAsTestFunction('_formatize', "dry fire",
+		function _formatize_dry_fire_test()
+		{
+			_testSucceededIf(_formatize() === false);
+		}
+	);
+
+	_registerAsTestFunction('_formatize', "Empty arguments",
+		function _formatize_empty_arguments_test()
+		{
+			var expectation = "Nothing was replaced";
+
+			var result = _formatize(expectation);
+
+			_testSucceededIf(result === expectation);
+		}
+	);
+
+	_registerAsTestFunction('_formatize', "Simple string",
+		function _formatize_simple_string_test()
+		{
+			var expectation = "Test succeeded";
+
+			var result = _formatize("Test {@1:s}", "succeeded");
+
+			_testSucceededIf(result === expectation);
+		}
+	);
+
+	_registerAsTestFunction('_formatize', "unsupported type",
+		function _formatize_unsupported_type_test()
+		{
+			var expectation = "Trying to format a function results in <unsupported type>";
+
+			var result = _formatize("Trying to format a function results in {@1:f}", function(){});
+
+			_testSucceededIf(result === expectation);
+		}
+	);
+
+	_registerAsTestFunction('_formatize', "Parameter mismatch",
+		function _formatize_parameter_mistmatch_test()
+		{
+			var expectation = "Trying to format an undefined argument results in <parameter mismatch>";
+
+			var result = _formatize("Trying to format an undefined argument results in {@2:s}", "2nd arg missing");
+
+			_testSucceededIf(result === expectation);
+		}
+	);
 
 	/***********************************************************************************************\
 	*	Run da maddafakka!!!
