@@ -159,6 +159,7 @@
 		
 		var args = arguments;
 
+		// This is temporary to speed things up. Should be a property with CRUD and invalidation.
 		var supported_types = {
 			b: _isBoolean,
 			i: _isInteger,
@@ -173,6 +174,7 @@
 		function typeCheckOrBust(match, position, type_flag)
 		{
 			var insert_value = args[position];
+
 			if (!insert_value)
 			{
 				console.log("Formatize parameter mismatch");
@@ -181,6 +183,7 @@
 			} 
 
 			var type_check = supported_types[type_flag];
+
 			if (!type_check)
 			{
 				console.log("Formatize unsupported type");
@@ -493,7 +496,7 @@
 
 		_removePropertyFromChain(property);
 
-		console.log(property_name + ' was invalidated ' + property.invalidation_calls + ' time(s) before validation.');
+		console.log("Number of invalidations prior to validating '" + property_name + "': " + property.invalidation_calls);
 
 		property.invalidation_calls = 0;
 	}
