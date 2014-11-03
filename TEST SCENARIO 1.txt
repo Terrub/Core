@@ -1,0 +1,185 @@
+TEST SCENARIO 1
+(performance_test1.js)
+Starting test number:  1 performance_test.js:245
+2014-11-02 23:11:05.511started timer:  1 performance_test.js:70
+2014-11-02 23:11:05.511total_execution_time:  1 ms performance_test.js:283
+2014-11-02 23:11:05.511number_of_iterations:  1 performance_test.js:284
+2014-11-02 23:11:05.511average_execution_time:  1 ms performance_test.js:285
+2014-11-02 23:11:05.512Ending test number:  1 
+ performance_test.js:286
+2014-11-02 23:11:05.512Starting test number:  2 performance_test.js:245
+2014-11-02 23:11:05.512total_execution_time:  0 ms performance_test.js:283
+2014-11-02 23:11:05.512number_of_iterations:  10 performance_test.js:284
+2014-11-02 23:11:05.513average_execution_time:  0 ms performance_test.js:285
+2014-11-02 23:11:05.513Ending test number:  2 
+ performance_test.js:286
+2014-11-02 23:11:05.513Starting test number:  3 performance_test.js:245
+2014-11-02 23:11:05.513total_execution_time:  0 ms performance_test.js:283
+2014-11-02 23:11:05.513number_of_iterations:  100 performance_test.js:284
+2014-11-02 23:11:05.514average_execution_time:  0 ms performance_test.js:285
+2014-11-02 23:11:05.514Ending test number:  3 
+ performance_test.js:286
+2014-11-02 23:11:05.514Starting test number:  4 performance_test.js:245
+2014-11-02 23:11:05.515total_execution_time:  1 ms performance_test.js:283
+2014-11-02 23:11:05.515number_of_iterations:  1000 performance_test.js:284
+2014-11-02 23:11:05.515average_execution_time:  0.001 ms performance_test.js:285
+2014-11-02 23:11:05.516Ending test number:  4 
+ performance_test.js:286
+2014-11-02 23:11:05.516Starting test number:  5 performance_test.js:245
+2014-11-02 23:11:05.524total_execution_time:  6 ms performance_test.js:283
+2014-11-02 23:11:05.525number_of_iterations:  10000 performance_test.js:284
+2014-11-02 23:11:05.525average_execution_time:  0.0006 ms performance_test.js:285
+2014-11-02 23:11:05.525Ending test number:  5 
+ performance_test.js:286
+2014-11-02 23:11:05.525Starting test number:  6 performance_test.js:245
+2014-11-02 23:11:05.596total_execution_time:  43 ms performance_test.js:283
+2014-11-02 23:11:05.597number_of_iterations:  100000 performance_test.js:284
+2014-11-02 23:11:05.597average_execution_time:  0.00043 ms performance_test.js:285
+2014-11-02 23:11:05.597Ending test number:  6 
+ performance_test.js:286
+2014-11-02 23:11:05.597Starting test number:  7 performance_test.js:245
+2014-11-02 23:11:06.239total_execution_time:  307 ms performance_test.js:283
+2014-11-02 23:11:06.240number_of_iterations:  1000000 performance_test.js:284
+2014-11-02 23:11:06.240average_execution_time:  0.000307 ms performance_test.js:285
+2014-11-02 23:11:06.240Ending test number:  7 
+ performance_test.js:286
+2014-11-02 23:11:06.240Starting test number:  8 performance_test.js:245
+2014-11-02 23:11:12.655total_execution_time:  3210 ms performance_test.js:283
+2014-11-02 23:11:12.656number_of_iterations:  10000000 performance_test.js:284
+2014-11-02 23:11:12.656average_execution_time:  0.000321 ms performance_test.js:285
+2014-11-02 23:11:12.656Ending test number:  8 
+ performance_test.js:286
+2014-11-02 23:11:12.656Starting test number:  9 performance_test.js:245
+2014-11-02 23:11:44.238maximum_execution_time:  15000 ms performance_test.js:266
+2014-11-02 23:11:44.238Aborted at iteration:  49312189 performance_test.js:267
+2014-11-02 23:11:44.238total_execution_time:  15000 ms performance_test.js:283
+2014-11-02 23:11:44.238number_of_iterations:  49312190 performance_test.js:284
+2014-11-02 23:11:44.239average_execution_time:  0.0003041844217423724 ms performance_test.js:285
+2014-11-02 23:11:44.239Ending test number:  9 
+ performance_test.js:286
+2014-11-02 23:11:44.248closed timer: 1 performance_test.js:120
+2014-11-02 23:11:44.249Properties validated:0 
+
+TEST SCENARIO 2
+(performance_test2.js)
+Starting test number:  1 performance_test.js:245
+2014-11-02 23:14:53.324started timer:  1 performance_test.js:71
+2014-11-02 23:14:53.324total_execution_time:  0 ms performance_test.js:283
+2014-11-02 23:14:53.324number_of_iterations:  1 performance_test.js:284
+2014-11-02 23:14:53.334average_execution_time:  0 ms performance_test.js:285
+2014-11-02 23:14:53.334Ending test number:  1 
+ performance_test.js:286
+2014-11-02 23:14:53.334Starting test number:  2 performance_test.js:245
+2014-11-02 23:14:53.334total_execution_time:  0 ms performance_test.js:283
+2014-11-02 23:14:53.334number_of_iterations:  10 performance_test.js:284
+2014-11-02 23:14:53.335average_execution_time:  0 ms performance_test.js:285
+2014-11-02 23:14:53.335Ending test number:  2 
+ performance_test.js:286
+2014-11-02 23:14:53.335Starting test number:  3 performance_test.js:245
+2014-11-02 23:14:53.336total_execution_time:  0 ms performance_test.js:283
+2014-11-02 23:14:53.336number_of_iterations:  100 performance_test.js:284
+2014-11-02 23:14:53.336average_execution_time:  0 ms performance_test.js:285
+2014-11-02 23:14:53.336Ending test number:  3 
+ performance_test.js:286
+2014-11-02 23:14:53.336Starting test number:  4 performance_test.js:245
+2014-11-02 23:14:53.337total_execution_time:  0 ms performance_test.js:283
+2014-11-02 23:14:53.338number_of_iterations:  1000 performance_test.js:284
+2014-11-02 23:14:53.338average_execution_time:  0 ms performance_test.js:285
+2014-11-02 23:14:53.338Ending test number:  4 
+ performance_test.js:286
+2014-11-02 23:14:53.339Starting test number:  5 performance_test.js:245
+2014-11-02 23:14:53.344total_execution_time:  3 ms performance_test.js:283
+2014-11-02 23:14:53.344number_of_iterations:  10000 performance_test.js:284
+2014-11-02 23:14:53.345average_execution_time:  0.0003 ms performance_test.js:285
+2014-11-02 23:14:53.345Ending test number:  5 
+ performance_test.js:286
+2014-11-02 23:14:53.345Starting test number:  6 performance_test.js:245
+2014-11-02 23:14:53.401total_execution_time:  24 ms performance_test.js:283
+2014-11-02 23:14:53.402number_of_iterations:  100000 performance_test.js:284
+2014-11-02 23:14:53.402average_execution_time:  0.00024 ms performance_test.js:285
+2014-11-02 23:14:53.402Ending test number:  6 
+ performance_test.js:286
+2014-11-02 23:14:53.402Starting test number:  7 performance_test.js:245
+2014-11-02 23:14:53.934total_execution_time:  260 ms performance_test.js:283
+2014-11-02 23:14:53.934number_of_iterations:  1000000 performance_test.js:284
+2014-11-02 23:14:53.935average_execution_time:  0.00026 ms performance_test.js:285
+2014-11-02 23:14:53.935Ending test number:  7 
+ performance_test.js:286
+2014-11-02 23:14:53.935Starting test number:  8 performance_test.js:245
+2014-11-02 23:14:59.140total_execution_time:  2687 ms performance_test.js:283
+2014-11-02 23:14:59.140number_of_iterations:  10000000 performance_test.js:284
+2014-11-02 23:14:59.140average_execution_time:  0.0002687 ms performance_test.js:285
+2014-11-02 23:14:59.140Ending test number:  8 
+ performance_test.js:286
+2014-11-02 23:14:59.140Starting test number:  9 performance_test.js:245
+2014-11-02 23:15:28.062maximum_execution_time:  15000 ms performance_test.js:266
+2014-11-02 23:15:28.062Aborted at iteration:  55733519 performance_test.js:267
+2014-11-02 23:15:28.062total_execution_time:  15000 ms performance_test.js:283
+2014-11-02 23:15:28.062number_of_iterations:  55733520 performance_test.js:284
+2014-11-02 23:15:28.062average_execution_time:  0.0002691378545622096 ms performance_test.js:285
+2014-11-02 23:15:28.063Ending test number:  9 
+ performance_test.js:286
+2014-11-02 23:15:28.074closed timer: 1 performance_test.js:121
+2014-11-02 23:15:28.074Properties validated:0 
+
+TEST SCENARIO 3
+(performance_test3.js)
+Starting test number:  1 performance_test.js:258
+2014-11-03 00:07:04.991started timer:  1 performance_test.js:75
+2014-11-03 00:07:04.992total_execution_time:  1 ms performance_test.js:296
+2014-11-03 00:07:04.992number_of_iterations:  1 performance_test.js:297
+2014-11-03 00:07:04.992average_execution_time:  1 ms performance_test.js:298
+2014-11-03 00:07:04.992Ending test number:  1 
+ performance_test.js:299
+2014-11-03 00:07:04.992Starting test number:  2 performance_test.js:258
+2014-11-03 00:07:04.992total_execution_time:  0 ms performance_test.js:296
+2014-11-03 00:07:04.993number_of_iterations:  10 performance_test.js:297
+2014-11-03 00:07:04.993average_execution_time:  0 ms performance_test.js:298
+2014-11-03 00:07:04.993Ending test number:  2 
+ performance_test.js:299
+2014-11-03 00:07:04.993Starting test number:  3 performance_test.js:258
+2014-11-03 00:07:04.993total_execution_time:  0 ms performance_test.js:296
+2014-11-03 00:07:04.993number_of_iterations:  100 performance_test.js:297
+2014-11-03 00:07:04.993average_execution_time:  0 ms performance_test.js:298
+2014-11-03 00:07:04.994Ending test number:  3 
+ performance_test.js:299
+2014-11-03 00:07:04.994Starting test number:  4 performance_test.js:258
+2014-11-03 00:07:04.994total_execution_time:  0 ms performance_test.js:296
+2014-11-03 00:07:04.995number_of_iterations:  1000 performance_test.js:297
+2014-11-03 00:07:04.995average_execution_time:  0 ms performance_test.js:298
+2014-11-03 00:07:04.995Ending test number:  4 
+ performance_test.js:299
+2014-11-03 00:07:04.995Starting test number:  5 performance_test.js:258
+2014-11-03 00:07:05.003total_execution_time:  4 ms performance_test.js:296
+2014-11-03 00:07:05.003number_of_iterations:  10000 performance_test.js:297
+2014-11-03 00:07:05.003average_execution_time:  0.0004 ms performance_test.js:298
+2014-11-03 00:07:05.003Ending test number:  5 
+ performance_test.js:299
+2014-11-03 00:07:05.004Starting test number:  6 performance_test.js:258
+2014-11-03 00:07:05.064total_execution_time:  35 ms performance_test.js:296
+2014-11-03 00:07:05.065number_of_iterations:  100000 performance_test.js:297
+2014-11-03 00:07:05.065average_execution_time:  0.00035 ms performance_test.js:298
+2014-11-03 00:07:05.065Ending test number:  6 
+ performance_test.js:299
+2014-11-03 00:07:05.066Starting test number:  7 performance_test.js:258
+2014-11-03 00:07:05.661total_execution_time:  319 ms performance_test.js:296
+2014-11-03 00:07:05.661number_of_iterations:  1000000 performance_test.js:297
+2014-11-03 00:07:05.661average_execution_time:  0.000319 ms performance_test.js:298
+2014-11-03 00:07:05.661Ending test number:  7 
+ performance_test.js:299
+2014-11-03 00:07:05.661Starting test number:  8 performance_test.js:258
+2014-11-03 00:07:11.531total_execution_time:  3288 ms performance_test.js:296
+2014-11-03 00:07:11.531number_of_iterations:  10000000 performance_test.js:297
+2014-11-03 00:07:11.531average_execution_time:  0.0003288 ms performance_test.js:298
+2014-11-03 00:07:11.532Ending test number:  8 
+ performance_test.js:299
+2014-11-03 00:07:11.532Starting test number:  9 performance_test.js:258
+2014-11-03 00:07:48.494maximum_execution_time:  15000 ms performance_test.js:279
+2014-11-03 00:07:48.494Aborted at iteration:  46041676 performance_test.js:280
+2014-11-03 00:07:48.494total_execution_time:  15000 ms performance_test.js:296
+2014-11-03 00:07:48.494number_of_iterations:  46041677 performance_test.js:297
+2014-11-03 00:07:48.495average_execution_time:  0.0003257917820847403 ms performance_test.js:298
+2014-11-03 00:07:48.495Ending test number:  9 
+ performance_test.js:299
+2014-11-03 00:07:48.500closed timer: 1 performance_test.js:125
+2014-11-03 00:07:48.501Properties validated:0 
