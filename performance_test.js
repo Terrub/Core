@@ -36,7 +36,7 @@ var validator = {};
 		
 	function _isActiveTimer (timer)
 	{
-		return (!_isUndefined(_timer) && _isNumber(_timer));
+		return (!_isUndefined(timer) && _isNumber(timer));
 	}
 
 	function _initiateValidation()
