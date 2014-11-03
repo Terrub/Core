@@ -127,57 +127,48 @@
 		return Date.now();
 	}
 
-	/**
-	 * Formatises a list of variable arguments into the allocated position of the given format.
-	 * 
-	 * Arguments:
-	 * 	<string> "format"
-	 *		The format the given arguments have to be allocated to.
-	 *	<*> ... (optional)
-	 *		A variable list of arguments that will ordered into the given format.
-	 * 		Available format options:
-	 *		"{@x:T}" where x is the position of the argument in the provided argument list (optional)
-	 *		and T = the required type (or types?) the argument needs to adhere to.
-	 *		Possible types are:
-	 *		- 'b' Boolean
-	 *		- 'i' Integer
-	 *		- 'n' Number
-	 *		- 's' String
-	 *
-	 * Return:
-	 *	<string>
-	 *		The formatted arguments
-	 */
-	function _formatize(format)
+	/***********************************************************************************************\
+	*	FORMATIZER OBJECT
+	\***********************************************************************************************/
+
+	var Formatizer = (function constructFormatizer()
 	{
-		if (!_isString(format))
-		{
-			console.log("function '_formatize' expected string as argument #1, received: ", format);
+		var _formatizer = {};
 
-			return false;
-		}
-		
-		var args = arguments;
+		var args;
 
-		// This is temporary to speed things up. Should be a property with CRUD and invalidation.
-		var supported_types = {
-			b: _isBoolean,
-			i: _isInteger,
-			n: _isNumber,
-			s: _isString
-		}
-		var type_flags = "bins";
+		var supported_types = {};
 
 		// Attempt to find n replace en masse to prevent loops. Hopefully the 'g' modifier is enough
 		var pattern = new RegExp("\{@([0-9]+):([a-z])\}", "gi");
+
+		function _addFormatType(flag, typedefinitionTest)
+		{
+			if (!_isString(flag))
+			{
+				return;
+			}
+
+			if (!_isFunction(typedefinitionTest))
+			{
+				return;
+			}
+
+			supported_types[flag] = typedefinitionTest;
+		}
+
+		_addFormatType("b", _isBoolean);
+		_addFormatType("n", _isNumber);
+		_addFormatType("i", _isInteger);
+		_addFormatType("s", _isString);
 		
-		function typeCheckOrBust(match, position, type_flag)
+		function _typeCheck(match, position, type_flag)
 		{
 			var insert_value = args[position];
 
 			if (!insert_value)
 			{
-				console.log("Formatize parameter mismatch");
+				// console.log("Formatize parameter mismatch");
 				
 				return "<parameter mismatch>";
 			} 
@@ -186,14 +177,14 @@
 
 			if (!type_check)
 			{
-				console.log("Formatize unsupported type");
+				// console.log("Formatize unsupported type");
 
 				return "<unsupported type>";
 			}
 
 			if (!type_check(insert_value))
 			{
-				console.log("Formatize type mismatch");
+				// console.log("Formatize type mismatch");
 
 				return "<type mismatch>";
 			}
@@ -201,8 +192,47 @@
 			return insert_value;
 		}
 
-		return format.replace(pattern, typeCheckOrBust);
-	}
+		/**
+		 * Formatises a list of variable arguments into the allocated position of the given format.
+		 * 
+		 * Arguments:
+		 * 	<string> "format"
+		 *		The format the given arguments have to be allocated to.
+		 *	<*> ... (optional)
+		 *		A variable list of arguments that will be ordered into the given format.
+		 * 		Available format options:
+		 *		"{@x:T}" where x is the position of the argument in the provided argument list (optional)
+		 *		and T = the required type (or types?) the argument needs to adhere to.
+		 *		Possible types are:
+		 *		- 'b' Boolean
+		 *		- 'i' Integer
+		 *		- 'n' Number
+		 *		- 's' String
+		 *
+		 * Return:
+		 *	<string>
+		 *		The formatted arguments
+		 */
+		function _formatize(format)
+		{
+			if (!_isString(format))
+			{
+				console.log("function '_formatize' expected string as argument #1, received: ", format);
+
+				return false;
+			}
+			
+			args = arguments;
+
+			return format.replace(pattern, _typeCheck);
+		}
+
+		// Allow the outside to reach us.
+		_formatizer["Format"] = _formatize;
+		_formatizer["AddFormatType"] = _addFormatType;
+
+		return _formatizer;
+	})();
 
 	/***********************************************************************************************\
 	*	Contextual functionality
@@ -757,52 +787,52 @@
 		}
 	);
 
-	_registerAsTestFunction('_formatize', "dry fire",
-		function _formatize_dry_fire_test()
+	_registerAsTestFunction('Formatizer.Format', "dry fire",
+		function _formatizer_dry_fire_test()
 		{
-			_testSucceededIf(_formatize() === false);
+			_testSucceededIf(Formatizer["Format"]() === false);
 		}
 	);
 
-	_registerAsTestFunction('_formatize', "Empty arguments",
-		function _formatize_empty_arguments_test()
+	_registerAsTestFunction('Formatizer.Format', "Empty arguments",
+		function _formatizer_empty_arguments_test()
 		{
 			var expectation = "Nothing was replaced";
 
-			var result = _formatize(expectation);
+			var result = Formatizer["Format"](expectation);
 
 			_testSucceededIf(result === expectation);
 		}
 	);
 
-	_registerAsTestFunction('_formatize', "Simple string",
+	_registerAsTestFunction('Formatizer.Format', "Simple string",
 		function _formatize_simple_string_test()
 		{
 			var expectation = "Test succeeded";
 
-			var result = _formatize("Test {@1:s}", "succeeded");
+			var result = Formatizer["Format"]("Test {@1:s}", "succeeded");
 
 			_testSucceededIf(result === expectation);
 		}
 	);
 
-	_registerAsTestFunction('_formatize', "unsupported type",
+	_registerAsTestFunction('Formatizer.Format', "unsupported type",
 		function _formatize_unsupported_type_test()
 		{
 			var expectation = "Trying to format a function results in <unsupported type>";
 
-			var result = _formatize("Trying to format a function results in {@1:f}", function(){});
+			var result = Formatizer["Format"]("Trying to format a function results in {@1:f}", function(){});
 
 			_testSucceededIf(result === expectation);
 		}
 	);
 
-	_registerAsTestFunction('_formatize', "Parameter mismatch",
+	_registerAsTestFunction('Formatizer.Format', "Parameter mismatch",
 		function _formatize_parameter_mistmatch_test()
 		{
 			var expectation = "Trying to format an undefined argument results in <parameter mismatch>";
 
-			var result = _formatize("Trying to format an undefined argument results in {@2:s}", "2nd arg missing");
+			var result = Formatizer["Format"]("Trying to format an undefined argument results in {@2:s}", "2nd arg missing");
 
 			_testSucceededIf(result === expectation);
 		}
