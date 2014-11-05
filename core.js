@@ -5,7 +5,6 @@
 *-----------------------------------------------------------------------------------------------
 
 	#TODO:
-	-		Create a wrapper function for console.log so we can easily turn them off n shit
 	-		Look into using the validateproperties as an engine for threads?
 	-		REFACTOR
 			- I want all responsibilities locked to it's respective owners.
@@ -127,6 +126,13 @@
 		return Date.now();
 	}
 
+	// Simplistic wrapper for logging funneling all calls to a single function.
+	// Obligates the use of a single sentence. Use Formatizer.Format to create strings from args.
+	function _report(message)
+	{
+		console.log("Core: " + message);
+	}
+
 	/***********************************************************************************************\
 	*	FORMATIZER OBJECT
 	\***********************************************************************************************/
@@ -168,7 +174,7 @@
 
 			if (!insert_value)
 			{
-				// console.log("Formatize parameter mismatch");
+				// _report("Formatize parameter mismatch");
 				
 				return "<parameter mismatch>";
 			} 
@@ -177,14 +183,14 @@
 
 			if (!type_check)
 			{
-				// console.log("Formatize unsupported type");
+				// _report("Formatize unsupported type");
 
 				return "<unsupported type>";
 			}
 
 			if (!type_check(insert_value))
 			{
-				// console.log("Formatize type mismatch");
+				// _report("Formatize type mismatch");
 
 				return "<type mismatch>";
 			}
@@ -217,7 +223,7 @@
 		{
 			if (!_isString(format))
 			{
-				console.log("function '_formatize' expected string as argument #1, received: ", format);
+				_report("function '_formatize' expected string as argument #1, received: ", format);
 
 				return false;
 			}
@@ -275,7 +281,7 @@
 			_removeEventListener = document.removeEventListener;
 			_document_ready_event = "DOMContentLoaded";
 
-			console.log("Using First event listener option.");
+			_report("Using First event listener option.");
 		}
 		else if (document.attachEvent)
 		{
@@ -283,7 +289,7 @@
 			_removeEventListener = document.detachEvent;
 			_document_ready_event = "onreadystatechange";
 			
-			console.log("Using Second event listener option.");
+			_report("Using Second event listener option.");
 		}
 		else
 		{
@@ -368,7 +374,7 @@
 	{
 		if (_isActiveTimer(_timer))
 		{
-			console.log("Attempt to activate excess timer.");
+			_report("Attempt to activate excess timer.");
 
 			return false;
 		}
@@ -386,21 +392,21 @@
 		// So get the timer started so we can empty the validation chain.
 		_timer = setInterval(intervalExecution, interval);
 
-		console.log("started timer: ", _timer);
+		_report("started timer: ", _timer);
 	}
 
 	function _stopValidation()
 	{
 		if (!_isActiveTimer(_timer))
 		{
-			console.log("Attempt to deactivate inactive timer: ", _timer);
+			_report("Attempt to deactivate inactive timer: ", _timer);
 
 			return false;
 		}
 
 		clearInterval(_timer);
 
-		console.log("closed timer:" , _timer);
+		_report("closed timer:" , _timer);
 
 		_timer = null;
 
@@ -435,26 +441,26 @@
 
 			execution_time = _getTimeStamp() - start_time;
 
-			console.log("validated property number: " + properties_validated + " in " + execution_time + "ms.");
+			_report("validated property number: " + properties_validated + " in " + execution_time + "ms.");
 
 			time_left -= execution_time;
 		}
 
-		console.log("Properties validated:" + properties_validated);
+		_report("Properties validated:" + properties_validated);
 	}
 
 	function _addProperty(name, validationFunction)
 	{
 		if (!_isString(name))
 		{
-			console.log("function '_addProperty' expected string as argument #1, received: ", name);
+			_report("function '_addProperty' expected string as argument #1, received: ", name);
 
 			return false;
 		}
 
 		if (!_isFunction(validationFunction))
 		{
-			console.log("function '_addProperty' expected function as argument #2, received: ", validationFunction);
+			_report("function '_addProperty' expected function as argument #2, received: ", validationFunction);
 
 			return false;
 		}
@@ -477,7 +483,7 @@
 
 		if (!property)
 		{
-			console.log("Attempt to invalidate unknown property: ", property_name);
+			_report("Attempt to invalidate unknown property: ", property_name);
 
 			return false;
 		}
@@ -506,7 +512,7 @@
 
 		if (!property)
 		{
-			console.log("Attempt to validate unknown property: ", property);
+			_report("Attempt to validate unknown property: ", property);
 
 			return;
 		}
@@ -515,7 +521,7 @@
 		
 		if (!_isFunction(validator))
 		{
-			console.log("Attempt to call non-functional validator: ", validator);
+			_report("Attempt to call non-functional validator: ", validator);
 
 			return;
 		}
@@ -526,7 +532,7 @@
 
 		_removePropertyFromChain(property);
 
-		console.log("Number of invalidations prior to validating '" + property_name + "': " + property.invalidation_calls);
+		_report("Number of invalidations prior to validating '" + property_name + "': " + property.invalidation_calls);
 
 		property.invalidation_calls = 0;
 	}
@@ -540,7 +546,7 @@
 
 		if (_chain[property.name])
 		{
-			console.log("Attempt to add already existing property to chain: ", property);
+			_report("Attempt to add already existing property to chain: ", property);
 
 			return;
 		}
@@ -708,7 +714,7 @@
 	{
 		if (!_isFunction(func))
 		{
-			console.log("Attempt to register non-function as test function: ", func);
+			_report("Attempt to register non-function as test function: ", func);
 
 			return;
 		}
@@ -728,9 +734,9 @@
 			{
 				_tests[test_name]();
 			}
-			catch (e)
+			catch (error)
 			{
-				console.log(e);
+				throw error;
 				_tests_failed++
 			}
 		}
