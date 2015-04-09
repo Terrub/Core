@@ -7,7 +7,7 @@
 	#TODO:
 	-		Look into using the validateproperties as an engine for threads?
 	-		REFACTOR
-			- I want all responsibilities locked to it's respective owners.
+			- I want all responsibilities locked to their respective owners.
 			- See how many defensive checks we'd have to use per function to prevent it from
 			  being abusable if it were publically accessible, then try to get rid of as many of
 			  these defensive checks as possible using proper scoping!
@@ -36,7 +36,10 @@
 // Just run it for now.
 (function()
 {
-	// _internal_declarations
+	/***********************************************************************************************\
+	*	Internal Declarations
+	\***********************************************************************************************/
+	
 	var _container;
 	var _screen;
 
@@ -46,9 +49,13 @@
 	var _document_ready_event;
 	var _removeEventListener;
 
-	// Initiators
-
-	// _INTERNAL_CONSTANTS:
+	/***********************************************************************************************\
+	*	Initiators
+	\***********************************************************************************************/
+	
+	/***********************************************************************************************\
+	*	Internal Constants
+	\***********************************************************************************************/
 	var _PROPERTY_STATE_INITIATED = "_property_state_initiated";
 	var _PROPERTY_STATE_INVALIDATED = "_propert_state_invalidated";
 	var _PROPERTY_STATE_VALIDATED = "_property_state_validated";
@@ -59,8 +66,28 @@
 
 	var _validator_state = _VALIDATOR_STATE_IDLE;
 
+
+	/***********************************************************************************************\
+	*	Translatable messages
+	\***********************************************************************************************/
+	// I don't like that I have to identify a number with a unit when I can also have the unit itself
+	// known to the formatter. Consider adding more to the formatizer object to allow for a unit with
+	// prefixes like Orders of magnitude: http://en.wikipedia.org/wiki/Order_of_magnitude:
+	// -	(m)illi , (c)enti, (d)eci, (k)ilo, (M)ega, (G)iga, etc.
+	// As well as suffixes like units: http://unitsofmeasure.org/ucum.html
+	// -	(m)eter, (s)econd, (g)ram, (rad)ian, (C)elcius, etc.
+
+	// Report messages
+	var _REPORT_PROPERTY_VALIDATION = "validated property: {@1:s}\n\tExecuted in {@2:n}ms\n\tTimes invalidated: {@3:i}";
+	var _REPORT_TIMER_START = "Started timer number: {@1:i}";
+	var _REPORT_TIMER_STOP = "Stopped timer number: {@1:i}";
+
+	// Errors
+	var _ERROR_VALIDATION_ATTEMPT_UNKNOWN_PROPERTY = "Attempt to validate unknown property: {@1:s}";
+	var _ERROR_VALIDATION_ATTEMPT_NON_FUNCTION_VALIDATOR = "Validator does not contain a function for the property: {@1:s}";
+
 	// These are values pretty much. Should probably turn them into setter/getters later
-	var _frames_per_second = 60;
+	var _frames_per_second = 10;
 	var _seconds_per_frame = 1 / _frames_per_second;
 
 	var _interval_unit = 1000 // Milliseconds
@@ -126,7 +153,7 @@
 		return Date.now();
 	}
 
-	// Simplistic wrapper for logging funneling all calls to a single function.
+	// Simplistic wrapper for logging; funneling all calls to a single function.
 	// Obligates the use of a single sentence. Use Formatizer.Format to create strings from args.
 	function _report(message)
 	{
@@ -137,10 +164,8 @@
 	*	FORMATIZER OBJECT
 	\***********************************************************************************************/
 
-	var Formatizer = (function constructFormatizer()
+	var Formatizer = new (function _formatizerConstructor()
 	{
-		var _formatizer = {};
-
 		var args;
 
 		var supported_types = {};
@@ -172,7 +197,7 @@
 		{
 			var insert_value = args[position];
 
-			if (!insert_value)
+			if (_isUndefined(insert_value))
 			{
 				// _report("Formatize parameter mismatch");
 				
@@ -234,11 +259,9 @@
 		}
 
 		// Allow the outside to reach us.
-		_formatizer["Format"] = _formatize;
-		_formatizer["AddFormatType"] = _addFormatType;
-
-		return _formatizer;
-	})();
+		this["Format"] = _formatize;
+		this["AddFormatType"] = _addFormatType;
+	});
 
 	/***********************************************************************************************\
 	*	Contextual functionality
@@ -329,13 +352,6 @@
 
 		window.addEventListener("resize", resizeScreen);
 
-		var testResults = _runTests()
-
-		if (testResults.failed > 0)
-		{
-			alert(testResults.failed + "/" + testResults.total + " TESTS FAILED -- Program not running with certainty");
-		}
-
 		_screenTesting();
 	}
 
@@ -392,7 +408,10 @@
 		// So get the timer started so we can empty the validation chain.
 		_timer = setInterval(intervalExecution, interval);
 
-		_report("started timer: ", _timer);
+		_report( Formatizer["Format"](
+			_REPORT_TIMER_START,
+			_timer
+		));
 	}
 
 	function _stopValidation()
@@ -406,7 +425,10 @@
 
 		clearInterval(_timer);
 
-		_report("closed timer:" , _timer);
+		_report( Formatizer["Format"](
+			_REPORT_TIMER_STOP,
+			_timer
+		));
 
 		_timer = null;
 
@@ -414,15 +436,16 @@
 	}
 
 	// In here we need to iteratively do the first things on our to-do list till it's empty, or we
-	// ran out of time.
+	// run out of time.
 	function _validateProperties(time_left)
 	{
-		var current_property;
-
-		var start_time;
-		var execution_time;
-
 		var properties_validated = 0;
+
+		var property;
+
+		var execution_timestamp = _getTimeStamp();
+		var last_execution_timestamp;
+		var spent_time;
 
 		while (time_left > 0)
 		{
@@ -433,17 +456,19 @@
 				break;
 			}
 
-			start_time = _getTimeStamp();
+			last_execution_timestamp = execution_timestamp;
 
 			_validateProperty(_current_chain_link.name);
 
 			properties_validated++;
 
-			execution_time = _getTimeStamp() - start_time;
+			execution_timestamp = _getTimeStamp();
 
-			_report("validated property number: " + properties_validated + " in " + execution_time + "ms.");
+			spent_time = execution_timestamp - last_execution_timestamp;
 
-			time_left -= execution_time;
+			time_left -= spent_time;
+
+			_report("Spent time: " + spent_time);
 		}
 
 		_report("Properties validated:" + properties_validated);
@@ -488,7 +513,7 @@
 			return false;
 		}
 
-		property.invalidation_calls++;
+		property.invalidation_calls++
 
 		if (property.state == _PROPERTY_STATE_INVALIDATED)
 		{
@@ -507,34 +532,51 @@
 	}
 
 	function _validateProperty(property_name)
-	{
-		var property = _property_list[property_name];
+	{		
+		var property;
+		var validator;
+
+		var validation_timestamp_start;
+		var validation_timestamp_end;
+
+		property = _property_list[property_name];
 
 		if (!property)
 		{
-			_report("Attempt to validate unknown property: ", property);
-
-			return;
+			_report( Formatizer["Format"]( _ERROR_VALIDATION_ATTEMPT_UNKNOWN_PROPERTY,
+				property_name
+			));
 		}
 
-		var validator = property.validator;
+		validator = property["validator"];
 		
 		if (!_isFunction(validator))
 		{
-			_report("Attempt to call non-functional validator: ", validator);
+			_report( Formatizer["Format"]( _ERROR_VALIDATION_ATTEMPT_NON_FUNCTION_VALIDATOR,
+				property_name
+			));
 
 			return;
 		}
 
+		validation_timestamp_start = _getTimeStamp();
+
 		validator();
 
-		property.state = _PROPERTY_STATE_VALIDATED;
+		validation_timestamp_end = _getTimeStamp();
+
+		_report( Formatizer["Format"]( _REPORT_PROPERTY_VALIDATION,
+			property["name"],
+			validation_timestamp_end - validation_timestamp_start,
+			property["invalidation_calls"]
+		));
+
+		// reset property
+		property["state"] = _PROPERTY_STATE_VALIDATED;
+
+		property["invalidation_calls"] = 0;
 
 		_removePropertyFromChain(property);
-
-		_report("Number of invalidations prior to validating '" + property_name + "': " + property.invalidation_calls);
-
-		property.invalidation_calls = 0;
 	}
 
 	/**
@@ -542,11 +584,11 @@
 	 */
 	function _addPropertyToChain(property)
 	{
-		var name = property.name;
+		var name = property["name"];
 
-		if (_chain[property.name])
+		if (_chain[name])
 		{
-			_report("Attempt to add already existing property to chain: ", property);
+			_report("Attempt to add already existing property to chain: ", name);
 
 			return;
 		}
@@ -566,7 +608,7 @@
 			{
 				new_link.prev = _current_chain_link.prev;
 
-				_chain[_current_chain_link.prev].next = name;
+				_chain[ _current_chain_link.prev ].next = name;
 			}
 
 			_current_chain_link.prev = name;
@@ -593,8 +635,8 @@
 
 		var link = _chain[property.name];
 
-		_chain[link.prev].next = link.next;
-		_chain[link.next].prev = link.prev;
+		_chain[ link.prev ].next = link.next;
+		_chain[ link.next ].prev = link.prev;
 
 		if (_current_chain_link == link)
 		{
@@ -605,12 +647,12 @@
 			}
 			else
 			{
-				_current_chain_link = _chain[link.next];
+				_current_chain_link = _chain[ link.next ];
 			}
 		}
 
 		// aaaaaand it's gone.
-		delete _chain[property.name];
+		_chain[property.name] = null;
 	}
 
 	/***********************************************************************************************\
@@ -699,150 +741,6 @@
 			_showNextColour();
 		}
 	}
-	
-	
-	/***********************************************************************************************\
-	*	Test area.
-	\***********************************************************************************************/
-	var _tests_total = 0;
-	var _tests_succeeded = 0;
-	var _tests_failed = 0;
-
-	var _tests = {};
-
-	function _registerAsTestFunction(target_function, name, func)
-	{
-		if (!_isFunction(func))
-		{
-			_report("Attempt to register non-function as test function: ", func);
-
-			return;
-		}
-
-		_tests[name] = func;
-	}
-
-	function _runTests()
-	{
-		var result = {};
-
-		for (var test_name in _tests)
-		{
-			_tests_total++;
-
-			try
-			{
-				_tests[test_name]();
-			}
-			catch (error)
-			{
-				throw error;
-				_tests_failed++
-			}
-		}
-
-		result.succeeded = _tests_succeeded || 0;
-		result.failed = _tests_failed || 0;
-		result.total = _tests_total || 0;
-
-		return result;
-	}
-
-	function _testSucceededIf(statement)
-	{
-		if (statement === true)
-		{
-			_tests_succeeded++;
-		}
-		else // Fail by default
-		{
-			// Test FAIL
-			_tests_failed++;
-		}
-	}
-	
-	// Update test -> Old value should change to intended value
-	_registerAsTestFunction('_initiateValidation', "update test",
-		function()
-		{
-			var temp = _validator_state;
-
-			_validator_state = _VALIDATOR_STATE_IDLE;
-
-			_initiateValidation();
-
-			_testSucceededIf(_validator_state == _VALIDATOR_STATE_INITIATED);
-
-			_validator_state = temp;
-		}	
-	);
-
-	// redundancy test -> Current value stays the same
-	_registerAsTestFunction('_initiateValidation', "redundancy test",
-		function()
-		{
-			var temp = _validator_state;
-
-			_validator_state = _VALIDATOR_STATE_INITIATED;
-
-			_initiateValidation();
-
-			_testSucceededIf(_validator_state == _VALIDATOR_STATE_INITIATED);
-
-			_validator_state = temp;
-		}
-	);
-
-	_registerAsTestFunction('Formatizer.Format', "dry fire",
-		function _formatizer_dry_fire_test()
-		{
-			_testSucceededIf(Formatizer["Format"]() === false);
-		}
-	);
-
-	_registerAsTestFunction('Formatizer.Format', "Empty arguments",
-		function _formatizer_empty_arguments_test()
-		{
-			var expectation = "Nothing was replaced";
-
-			var result = Formatizer["Format"](expectation);
-
-			_testSucceededIf(result === expectation);
-		}
-	);
-
-	_registerAsTestFunction('Formatizer.Format', "Simple string",
-		function _formatize_simple_string_test()
-		{
-			var expectation = "Test succeeded";
-
-			var result = Formatizer["Format"]("Test {@1:s}", "succeeded");
-
-			_testSucceededIf(result === expectation);
-		}
-	);
-
-	_registerAsTestFunction('Formatizer.Format', "unsupported type",
-		function _formatize_unsupported_type_test()
-		{
-			var expectation = "Trying to format a function results in <unsupported type>";
-
-			var result = Formatizer["Format"]("Trying to format a function results in {@1:f}", function(){});
-
-			_testSucceededIf(result === expectation);
-		}
-	);
-
-	_registerAsTestFunction('Formatizer.Format', "Parameter mismatch",
-		function _formatize_parameter_mistmatch_test()
-		{
-			var expectation = "Trying to format an undefined argument results in <parameter mismatch>";
-
-			var result = Formatizer["Format"]("Trying to format an undefined argument results in {@2:s}", "2nd arg missing");
-
-			_testSucceededIf(result === expectation);
-		}
-	);
 
 	/***********************************************************************************************\
 	*	Run da maddafakka!!!
